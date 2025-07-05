@@ -1,3 +1,5 @@
+import streamlit as st
+
 # 챗봇 인터페이스 메인 함수
 def main():
     st.title("테스트")
