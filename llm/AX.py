@@ -4,7 +4,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-api_key = os.environ.get('sktax_api_key')
+sktax_api_key = os.environ.get('sktax_api_key')
 client = OpenAI(
     base_url="https://guest-api.sktax.chat/v1",
     api_key=sktax_api_key
