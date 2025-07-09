@@ -2,3 +2,4 @@ streamlit
 selenium
 openai
 python-dotenv
+streamlit-autorefresh
