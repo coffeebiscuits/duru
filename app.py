@@ -1,4 +1,5 @@
 import streamlit as st
+from llm.AX import get_chat_response
 
 # 챗봇 인터페이스 메인 함수
 def main():
