@@ -7,12 +7,13 @@ client = OpenAI(
     api_key="sktax-XyeKFrq67ZjS4EpsDlrHHXV8it"
 )
 
-completion = client.chat.completions.create(
-    model="ax4",
-    messages=[
+def get_chat_response(user_input):
+    messages = [
         {"role": "system", "content": "당신은 증권전문가입니다."},
-        {"role": "user", "content": "코스피에 대해 알려주세요."}
+        {"role": "user", "content": user_input}
     ]
-)
-
-print(completion)
+    completion = client.chat.completions.create(
+        model="ax4",
+        messages=messages
+    )
+    return completion.choices[0].message.content
