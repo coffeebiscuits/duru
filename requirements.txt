@@ -1,3 +1,4 @@
 streamlit
 selenium
 openai
+python-dotenv
