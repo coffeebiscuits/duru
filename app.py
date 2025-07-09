@@ -22,9 +22,9 @@ def main():
         st.session_state.messages.append({"role": "user", "content": user_input})
 
         # 사용자 입력 처리
-        response = process_input(user_input)  # process_input 함수 호출
+        response = get_chat_response(user_input)  # get_chat_response 함수 호출
         assistant_response = response
-
+        
         # 챗봇 응답 출력
         with st.chat_message("assistant"):
             st.markdown(assistant_response)
