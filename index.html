@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>0331 Admin Dashboard (Remastered)</title>
+  <title>0331 Bond Admin (Remastered)</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -11,9 +11,9 @@
   
   <style>
     :root {
-      --primary-bg: #f3f5f9; /* 아주 연한 쿨톤 그레이 */
-      --sidebar-bg: #1e293b; /* 세련된 네이비 그레이 */
-      --accent-color: #6366f1; /* 모던한 인디고 퍼플 */
+      --primary-bg: #f3f5f9;
+      --sidebar-bg: #1e293b;
+      --accent-color: #6366f1;
       --text-main: #334155;
       --text-sub: #64748b;
     }
@@ -22,92 +22,68 @@
       font-family: 'Pretendard', -apple-system, sans-serif;
       background-color: var(--primary-bg);
       color: var(--text-main);
-      letter-spacing: -0.02em; /* 자간 좁힘 (세련됨의 핵심) */
+      letter-spacing: -0.02em;
     }
 
     /* 사이드바 */
     .sidebar {
       position: fixed; top: 0; bottom: 0; left: 0;
-      width: 260px;
-      padding: 30px 20px;
+      width: 260px; padding: 30px 20px;
       background-color: var(--sidebar-bg);
-      z-index: 1000;
-      box-shadow: 4px 0 20px rgba(0,0,0,0.05);
+      z-index: 1000; box-shadow: 4px 0 20px rgba(0,0,0,0.05);
     }
-    .brand {
-      color: #fff; font-size: 1.4rem; font-weight: 800;
-      margin-bottom: 40px; display: flex; align-items: center; gap: 10px;
-    }
+    .brand { color: #fff; font-size: 1.4rem; font-weight: 800; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
     .nav-link {
       color: #94a3b8; font-weight: 500; padding: 14px 16px;
-      border-radius: 12px; transition: all 0.2s; margin-bottom: 4px;
+      border-radius: 12px; transition: all 0.2s; margin-bottom: 4px; cursor: pointer;
     }
-    .nav-link:hover, .nav-link.active {
-      background-color: rgba(255,255,255,0.1);
-      color: #fff; transform: translateX(4px);
-    }
-    .nav-link i { margin-right: 10px; width: 20px; text-align: center; }
-
+    .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; transform: translateX(4px); }
+    
     /* 메인 영역 */
-    .main-content {
-      margin-left: 260px; padding: 40px;
-    }
+    .main-content { margin-left: 260px; padding: 40px; }
     @media (max-width: 768px) {
       .sidebar { transform: translateX(-100%); transition: 0.3s; }
       .main-content { margin-left: 0; padding: 20px; }
     }
 
     /* 카드 디자인 */
-    .stat-card {
-      background: #fff; border: none; border-radius: 20px;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-      transition: transform 0.2s;
-    }
+    .stat-card { background: #fff; border: none; border-radius: 20px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: transform 0.2s; }
     .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
     .stat-title { font-size: 0.9rem; color: var(--text-sub); font-weight: 600; margin-bottom: 8px; }
-    .stat-value { font-size: 1.8rem; font-weight: 800; color: #0f172a; margin: 0; }
-    .stat-icon { 
-      width: 48px; height: 48px; border-radius: 12px; 
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.2rem; margin-bottom: 16px;
-    }
+    .stat-value { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0; }
+    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 16px; }
+    
     .bg-indigo { background: #e0e7ff; color: #4f46e5; }
     .bg-emerald { background: #dcfce7; color: #16a34a; }
     .bg-rose { background: #ffe4e6; color: #e11d48; }
 
-    /* 테이블 & 차트 컨테이너 */
-    .content-box {
-      background: #fff; border-radius: 20px; padding: 30px;
-      border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-top: 30px;
-    }
-    .table thead th {
-      background: #f8fafc; color: var(--text-sub); 
-      font-weight: 600; font-size: 0.85rem; border: none; padding: 15px;
-    }
-    .table tbody td {
-      padding: 16px 15px; vertical-align: middle;
-      border-bottom: 1px solid #f1f5f9; font-size: 0.95rem;
-    }
-    .badge-soft {
-      padding: 6px 12px; border-radius: 30px; font-size: 0.8rem; font-weight: 600;
-    }
+    /* 컨텐츠 박스 */
+    .content-box { background: #fff; border-radius: 20px; padding: 30px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-top: 30px; }
+    
+    /* 테이블 */
+    .table thead th { background: #f8fafc; color: var(--text-sub); font-weight: 600; font-size: 0.85rem; border: none; padding: 15px; }
+    .table tbody td { padding: 16px 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+    
+    .badge-soft { padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; }
     .status-done { background: #dcfce7; color: #166534; }
-    .status-wait { background: #fff7ed; color: #9a3412; }
+    .status-wait { background: #eff6ff; color: #1e40af; }
+
+    /* 이자관리 입력창 전용 */
+    .input-interest { border: none; background: #f8fafc; text-align: right; width: 100%; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
+    .input-interest:focus { outline: 2px solid var(--accent-color); background: #fff; }
+
+    .hide { display: none !important; }
   </style>
 </head>
 <body>
 
   <nav class="sidebar">
-    <div class="brand">
-      <span>⚡ 0331 Admin</span>
-    </div>
-    <div class="nav flex-column">
-      <a href="#" class="nav-link active">📊 대시보드</a>
-      <a href="#" class="nav-link">👥 사용자 관리</a>
-      <a href="#" class="nav-link">📦 상품 관리</a>
-      <a href="#" class="nav-link">💳 결제 내역</a>
-      <a href="#" class="nav-link" style="margin-top: auto;">⚙️ 설정</a>
+    <div class="brand"><span>⚡ 0331 Admin</span></div>
+    <div class="nav flex-column" id="nav-menu">
+      <a data-tab="dashboard" class="nav-link active">📊 대시보드</a>
+      <a data-tab="list" class="nav-link">📦 자산 관리</a>
+      <a data-tab="interest" class="nav-link">💳 이자 수취</a>
+      <a data-tab="analytics" class="nav-link">📈 수익 통계</a>
     </div>
   </nav>
 
@@ -115,126 +91,367 @@
     
     <div class="d-flex justify-content-between align-items-center mb-5">
       <div>
-        <h2 style="font-weight: 800; margin-bottom: 4px;">안녕하세요, 오너님! 👋</h2>
-        <p style="color: var(--text-sub); margin: 0;">오늘의 현황을 한눈에 확인하세요.</p>
+        <h2 id="welcome-text" style="font-weight: 800; margin-bottom: 4px;">안녕하세요, 오너님! 👋</h2>
+        <p id="sub-text" style="color: var(--text-sub); margin: 0;">오늘의 투자 현황입니다.</p>
       </div>
-      <button class="btn btn-dark rounded-pill px-4">Download Report</button>
+      <div id="action-buttons">
+        </div>
     </div>
 
-    <div class="row g-4">
-      <div class="col-md-4">
-        <div class="stat-card">
-          <div class="stat-icon bg-indigo">💰</div>
-          <div class="stat-title">총 매출 (Monthly)</div>
-          <h3 class="stat-value">₩ 12,500,000</h3>
+    <div id="render-area"></div>
+
+  </main>
+
+  <div class="modal fade" id="addBondModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius: 24px; border: none; padding: 20px;">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" style="font-weight: 800;">새 채권 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-      </div>
-      <div class="col-md-4">
-        <div class="stat-card">
-          <div class="stat-icon bg-emerald">👥</div>
-          <div class="stat-title">신규 가입자</div>
-          <h3 class="stat-value">1,240 명</h3>
-        </div>
-      </div>
-      <div class="col-md-4">
-        <div class="stat-card">
-          <div class="stat-icon bg-rose">📉</div>
-          <div class="stat-title">이탈률</div>
-          <h3 class="stat-value">2.4%</h3>
-        </div>
+        <form id="add-bond-form">
+          <div class="modal-body space-y-4">
+            <div class="mb-3">
+              <label class="form-label font-bold small">채권명</label>
+              <input name="name" required class="form-control rounded-3" placeholder="예: 삼성전자 123">
+            </div>
+            <div class="row mb-3">
+              <div class="col">
+                <label class="form-label small">관리 계좌</label>
+                <input name="account" required class="form-control" placeholder="삼성증권">
+              </div>
+              <div class="col">
+                <label class="form-label small">매매이율(%)</label>
+                <input name="rate" type="number" step="0.01" required class="form-control">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col">
+                <label class="form-label small">매수일</label>
+                <input name="buyDate" type="date" required class="form-control">
+              </div>
+              <div class="col">
+                <label class="form-label small">만기일</label>
+                <input name="maturityDate" type="date" required class="form-control">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label small">매수금액(원)</label>
+              <input name="buyAmount" type="number" required class="form-control" placeholder="숫자만 입력">
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="submit" class="btn btn-dark w-100 rounded-pill py-3">등록 완료</button>
+          </div>
+        </form>
       </div>
     </div>
+  </div>
 
-    <div class="row">
-      <div class="col-lg-8">
-        <div class="content-box">
-          <h5 style="font-weight: 700; margin-bottom: 20px;">매출 추이</h5>
-          <canvas id="myChart" height="120"></canvas>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // --- Data & State ---
+    let bonds = JSON.parse(localStorage.getItem('bond_manager_v4_data')) || [
+        { id: 1, name: '에스케이하이닉스223-2(사)', account: '삼성증권', buyDate: '2023-08-11', maturityDate: '2026-04-13', rate: 4.02, buyAmount: 6632000, status: 'active', interests: { '2024': { '1': 34000, '4': 34000, '7': 34000, '10': 34000 }, '2025': { '1': 34000, '4': 34000 } } },
+        { id: 2, name: '현대캐피탈1962-3', account: '삼성증권', buyDate: '2023-01-19', maturityDate: '2025-12-22', rate: 5.05, buyAmount: 2051000, status: 'active', interests: { '2024': { '1': 10000, '2': 10000, '12': 10000 }, '2025': { '1': 10000, '2': 10000 } } },
+        { id: 3, name: '삼천리21-2', account: '삼성증권', buyDate: '2024-01-11', maturityDate: '2025-05-28', rate: 3.57, buyAmount: 2929000, status: 'completed', interests: { '2024': { '1': 13000, '4': 13000 } } }
+    ];
+
+    let activeTab = 'dashboard';
+    let selectedYear = new Date().getFullYear();
+    let searchTerm = '';
+    let currentChart = null;
+
+    const formatKRW = (v) => new Intl.NumberFormat('ko-KR').format(v) + '원';
+    const saveData = () => localStorage.setItem('bond_manager_v4_data', JSON.stringify(bonds));
+
+    // --- Main Rendering ---
+    function render() {
+      const area = document.getElementById('render-area');
+      const actionArea = document.getElementById('action-buttons');
+      area.innerHTML = '';
+      actionArea.innerHTML = '';
+
+      if (activeTab === 'dashboard') renderDashboard(area);
+      else if (activeTab === 'list') renderList(area, actionArea);
+      else if (activeTab === 'interest') renderInterest(area);
+      else if (activeTab === 'analytics') renderAnalytics(area);
+    }
+
+    function renderDashboard(container) {
+      const activeBonds = bonds.filter(b => b.status === 'active');
+      const totalInv = activeBonds.reduce((a, c) => a + c.buyAmount, 0);
+      let thisYearIncome = 0;
+      bonds.forEach(b => {
+        const yData = b.interests?.[new Date().getFullYear()];
+        if(yData) Object.values(yData).forEach(v => thisYearIncome += (Number(v)||0));
+      });
+
+      container.innerHTML = `
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon bg-indigo">💰</div>
+              <div class="stat-title">현재 총 투자 원금</div>
+              <h3 class="stat-value">${formatKRW(totalInv)}</h3>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon bg-emerald">💎</div>
+              <div class="stat-title">${new Date().getFullYear()}년 예상 이자</div>
+              <h3 class="stat-value">${formatKRW(thisYearIncome)}</h3>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-icon bg-rose">📦</div>
+              <div class="stat-title">운용 종목 수</div>
+              <h3 class="stat-value">${activeBonds.length} 개</h3>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <div class="row mt-4">
+          <div class="col-lg-8">
+            <div class="content-box">
+              <h5 style="font-weight: 700; margin-bottom: 20px;">자산 비중 (Top 5)</h5>
+              <canvas id="dashChart" height="120"></canvas>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="content-box">
+              <h5 style="font-weight: 700; margin-bottom: 20px;">최근 등록 자산</h5>
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead><tr><th>자산명</th><th>상태</th></tr></thead>
+                  <tbody>
+                    ${bonds.slice(-4).reverse().map(b => `
+                      <tr>
+                        <td class="small font-bold">${b.name}</td>
+                        <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const ctx = document.getElementById('dashChart').getContext('2d');
+      if(currentChart) currentChart.destroy();
+      currentChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: activeBonds.slice(0, 5).map(b => b.name),
+          datasets: [{ data: activeBonds.slice(0, 5).map(b => b.buyAmount), backgroundColor: '#6366f1', borderRadius: 10 }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
+      });
+    }
+
+    function renderList(container, actionArea) {
+      actionArea.innerHTML = `<button class="btn btn-dark rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button>`;
       
-      <div class="col-lg-4">
-        <div class="content-box">
-          <h5 style="font-weight: 700; margin-bottom: 20px;">최근 거래</h5>
+      container.innerHTML = `
+        <div class="content-box mt-0">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 style="font-weight: 700; margin: 0;">전체 채권 포트폴리오</h5>
+            <input type="text" id="listSearch" oninput="handleSearch(this.value)" placeholder="검색..." class="form-control form-control-sm w-auto rounded-pill px-3" value="${searchTerm}">
+          </div>
           <div class="table-responsive">
             <table class="table table-hover">
               <thead>
                 <tr>
-                  <th>고객명</th>
-                  <th>금액</th>
+                  <th>채권명</th>
+                  <th>계좌</th>
+                  <th>매수금액</th>
+                  <th>이율</th>
+                  <th>만기일</th>
                   <th>상태</th>
+                  <th>관리</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>김네오</td>
-                  <td style="font-weight:600;">₩ 15,000</td>
-                  <td><span class="badge-soft status-done">완료</span></td>
-                </tr>
-                <tr>
-                  <td>이카나</td>
-                  <td style="font-weight:600;">₩ 32,000</td>
-                  <td><span class="badge-soft status-wait">대기</span></td>
-                </tr>
-                <tr>
-                  <td>박클로</td>
-                  <td style="font-weight:600;">₩ 5,500</td>
-                  <td><span class="badge-soft status-done">완료</span></td>
-                </tr>
+                ${bonds.filter(b => b.name.toLowerCase().includes(searchTerm.toLowerCase())).reverse().map(b => `
+                  <tr>
+                    <td class="font-bold">${b.name}</td>
+                    <td class="text-secondary">${b.account}</td>
+                    <td class="font-bold">${formatKRW(b.buyAmount)}</td>
+                    <td class="text-primary font-bold">${b.rate}%</td>
+                    <td class="text-secondary">${b.maturityDate}</td>
+                    <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'상환완료'}</span></td>
+                    <td>
+                      <div class="btn-group">
+                        ${b.status==='active' ? `<button onclick="toggleStatus(${b.id})" class="btn btn-sm btn-outline-success border-0">✔️</button>` : ''}
+                        <button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0">🗑️</button>
+                      </div>
+                    </td>
+                  </tr>
+                `).join('')}
               </tbody>
             </table>
           </div>
         </div>
-      </div>
-    </div>
+      `;
+    }
 
-  </main>
+    function renderInterest(container) {
+      container.innerHTML = `
+        <div class="content-box mt-0 overflow-hidden">
+          <div class="d-flex gap-3 align-items-center mb-4">
+             <select onchange="changeYear(this.value)" class="form-select w-auto rounded-pill border-0 bg-light font-bold">
+                ${[2024, 2025, 2026].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>${y}년 데이터</option>`).join('')}
+             </select>
+             <p class="text-secondary m-0 small">※ 월별 수령하신 이자 금액을 직접 입력하세요.</p>
+          </div>
+          <div class="table-responsive" style="max-height: 600px;">
+            <table class="table table-sm text-center">
+              <thead class="sticky-top">
+                <tr>
+                  <th class="text-start">자산명</th>
+                  <th class="bg-indigo text-white">합계</th>
+                  ${Array.from({length:12}).map((_, i) => `<th>${i+1}월</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${bonds.map(b => {
+                  const yData = b.interests?.[selectedYear] || {};
+                  const rowTotal = Object.values(yData).reduce((a,b)=>a+(Number(b)||0), 0);
+                  return `
+                    <tr>
+                      <td class="text-start font-bold small" style="min-width:180px">${b.name}</td>
+                      <td class="bg-light font-bold">${rowTotal.toLocaleString()}</td>
+                      ${Array.from({length:12}).map((_, i) => `
+                        <td style="min-width:80px">
+                          <input type="number" value="${yData[i+1]||''}" 
+                            onchange="updateInterest(${b.id}, ${selectedYear}, ${i+1}, this.value)"
+                            class="input-interest">
+                        </td>
+                      `).join('')}
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
 
-  <script>
-    // 차트 설정 (모던 스타일)
-    const ctx = document.getElementById('myChart').getContext('2d');
-    
-    // 그라데이션 효과
-    let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-    gradient.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Indigo color
-    gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+    function renderAnalytics(container) {
+      const totalLife = bonds.reduce((a, c) => a + c.buyAmount, 0);
+      let totalProfit = 0;
+      bonds.forEach(b => Object.values(b.interests || {}).forEach(y => Object.values(y).forEach(v => totalProfit += (Number(v)||0))));
 
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['1월', '2월', '3월', '4월', '5월', '6월'],
-        datasets: [{
-          label: '매출',
-          data: [1200, 1900, 3000, 5000, 4200, 6000],
-          borderColor: '#6366f1', // Indigo
-          backgroundColor: gradient,
-          borderWidth: 3,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: '#6366f1',
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          fill: true,
-          tension: 0.4 // 곡선 부드럽게
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false } // 범례 숨김 (깔끔하게)
+      const monthlyData = Array(12).fill(0).map((_, i) => {
+        let sum = 0;
+        bonds.forEach(b => sum += (Number(b.interests?.[selectedYear]?.[i+1]) || 0));
+        return sum;
+      });
+
+      container.innerHTML = `
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="stat-card">
+              <div class="stat-title">누적 총 투자 (역대 합산)</div>
+              <h3 class="stat-value">${formatKRW(totalLife)}</h3>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="stat-card">
+              <div class="stat-title text-emerald">누적 이자 수익</div>
+              <h3 class="stat-value text-emerald">${formatKRW(totalProfit)}</h3>
+            </div>
+          </div>
+        </div>
+        <div class="content-box">
+          <h5 style="font-weight: 700; margin-bottom: 20px;">${selectedYear}년 월별 수익 흐름</h5>
+          <canvas id="anaChart" height="100"></canvas>
+        </div>
+      `;
+
+      const ctx = document.getElementById('anaChart').getContext('2d');
+      let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+      gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+      if(currentChart) currentChart.destroy();
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({length:12}, (_, i) => `${i+1}월`),
+          datasets: [{
+            data: monthlyData, borderColor: '#6366f1', backgroundColor: gradient,
+            fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4
+          }]
         },
-        scales: {
-          y: { 
-            beginAtZero: true, 
-            grid: { color: '#f1f5f9' }, // 그리드 연하게
-            ticks: { font: { family: 'Pretendard' } }
-          },
-          x: { 
-            grid: { display: false },
-            ticks: { font: { family: 'Pretendard' } }
-          }
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+      });
+    }
+
+    // --- Actions ---
+    window.toggleStatus = (id) => {
+      bonds = bonds.map(b => b.id === id ? {...b, status: 'completed'} : b);
+      saveData(); render();
+    };
+
+    window.deleteBond = (id) => {
+      if(confirm('정말 삭제하시겠습니까?')) {
+        bonds = bonds.filter(b => b.id !== id);
+        saveData(); render();
+      }
+    };
+
+    window.updateInterest = (id, year, month, val) => {
+      bonds = bonds.map(b => {
+        if(b.id === id) {
+          if(!b.interests[year]) b.interests[year] = {};
+          b.interests[year][month] = val;
         }
+        return b;
+      });
+      saveData(); render();
+    };
+
+    window.handleSearch = (val) => { searchTerm = val; render(); };
+    window.changeYear = (val) => { selectedYear = val; render(); };
+
+    // Navigation
+    document.getElementById('nav-menu').addEventListener('click', (e) => {
+      if(e.target.dataset.tab) {
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        e.target.classList.add('active');
+        activeTab = e.target.dataset.tab;
+        render();
       }
     });
+
+    // Form Submit
+    document.getElementById('add-bond-form').onsubmit = (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      bonds.push({
+        id: Date.now(),
+        name: fd.get('name'),
+        account: fd.get('account'),
+        buyDate: fd.get('buyDate'),
+        maturityDate: fd.get('maturityDate'),
+        rate: fd.get('rate'),
+        buyAmount: Number(fd.get('buyAmount')),
+        status: 'active',
+        interests: {}
+      });
+      saveData();
+      bootstrap.Modal.getInstance(document.getElementById('addBondModal')).hide();
+      render();
+      e.target.reset();
+    };
+
+    // Initial Start
+    render();
   </script>
 </body>
 </html>
