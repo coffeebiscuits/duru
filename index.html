@@ -74,10 +74,10 @@
   <nav class="sidebar">
     <div class="brand"><span>채권 관리</span></div>
     <div class="nav flex-column" id="nav-menu">
-      <a data-tab="dashboard" class="nav-link active">📊 대시보드</a>
-      <a data-tab="list" class="nav-link">📦 자산 관리</a>
-      <a data-tab="interest" class="nav-link">💳 이자 수취</a>
-      <a data-tab="analytics" class="nav-link">📈 수익 통계</a>
+      <a data-tab="dashboard" class="nav-link active">대시보드</a>
+      <a data-tab="list" class="nav-link">자산 관리</a>
+      <a data-tab="interest" class="nav-link"이자 수취</a>
+      <a data-tab="analytics" class="nav-link"수익 통계</a>
     </div>
   </nav>
 
@@ -86,7 +86,6 @@
     <div class="d-flex justify-content-between align-items-center mb-5">
       <div>
         <h2 id="welcome-text" style="font-weight: 800; margin-bottom: 4px;">안녕하세요 👋</h2>
-        <p id="sub-text" style="color: var(--text-sub); margin: 0;">오늘의 투자 현황입니다.</p>
       </div>
       <div id="action-buttons"></div>
     </div>
@@ -143,10 +142,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // --- Data & State 없음 (저장 및 유지 기능 일체 삭제) ---
+    // --- Data & State 없음 ---
     let activeTab = 'dashboard';
 
-    // --- Main Rendering (정적 레이아웃만 출력) ---
+    // --- Main Renderin ---
     function render() {
       const area = document.getElementById('render-area');
       const actionArea = document.getElementById('action-buttons');
@@ -170,8 +169,7 @@
         area.innerHTML = `<div class="content-box"><p class="text-muted text-center">데이터가 없어 분석이 불가능합니다.</p></div>`;
       }
     }
-
-    // --- Actions (데이터를 어디에도 저장하지 않음) ---
+    
     document.getElementById('nav-menu').addEventListener('click', (e) => {
       if(e.target.dataset.tab) {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -183,8 +181,7 @@
 
     document.getElementById('add-bond-form').onsubmit = (e) => {
       e.preventDefault();
-      // 입력값을 확인만 할 뿐, 배열(bonds)에 푸시하거나 저장하는 로직 삭제
-      alert('데이터가 전송되었으나, 저장 기능이 없어 폐기되었습니다.'); 
+      alert('(테스트 중)데이터가 전송되었습니다.'); 
       
       const modalElement = document.getElementById('addBondModal');
       bootstrap.Modal.getInstance(modalElement).hide();
