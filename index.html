@@ -1,195 +1,785 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>채권 관리 시스템</title>
-  
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>통합 어드민 대시보드</title>
+  <!-- 카카오 스타일 폰트 적용 (Spoqa Han Sans Neo) -->
+  <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    :root {
-      --primary-bg: #f3f5f9;
-      --sidebar-bg: #1e293b;
-      --accent-color: #6366f1;
-      --text-main: #334155;
-      --text-sub: #64748b;
+    /* ====== 기본 스타일 및 다크모드 ====== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Spoqa Han Sans Neo', 'sans-serif';
+      background: #1e1e1e;
+      color: #fff;
+      height: 100%;
     }
-
     body {
-      font-family: 'Pretendard', -apple-system, sans-serif;
-      background-color: var(--primary-bg);
-      color: var(--text-main);
-      letter-spacing: -0.02em;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
-
+    a { color: inherit; text-decoration: none; }
+    button {
+      font-family: inherit;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    /* ====== 상단 헤더 ====== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #232323;
+      border-bottom: 1px solid #292929;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .profile-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .profile-img {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #FEE500;
+      background: #333;
+    }
+    .profile-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .clock {
+      font-family: 'Spoqa Han Sans Neo', monospace;
+      font-size: 1.1rem;
+      background: #292929;
+      padding: 6px 14px;
+      border-radius: 20px;
+      letter-spacing: 2px;
+      color: #FEE500;
+    }
+    /* ====== 레이아웃 ====== */
+    .container {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    /* ====== 좌측 메뉴 ====== */
     .sidebar {
-      position: fixed; top: 0; bottom: 0; left: 0;
-      width: 260px; padding: 30px 20px;
-      background-color: var(--sidebar-bg);
-      z-index: 1000; box-shadow: 4px 0 20px rgba(0,0,0,0.05);
+      width: 220px;
+      background: #222;
+      border-right: 1px solid #292929;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      transition: left 0.2s;
+      position: relative;
     }
-    .brand { color: #fff; font-size: 1.4rem; font-weight: 800; margin-bottom: 40px; display: flex; align-items: center; gap: 10px; }
-    .nav-link {
-      color: #94a3b8; font-weight: 500; padding: 14px 16px;
-      border-radius: 12px; transition: all 0.2s; margin-bottom: 4px; cursor: pointer;
+    .sidebar-menu {
+      list-style: none;
+      padding: 0 0 0 24px;
+      margin: 0;
     }
-    .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; transform: translateX(4px); }
-    
-    .main-content { margin-left: 260px; padding: 40px; }
-    @media (max-width: 768px) {
-      .sidebar { transform: translateX(-100%); transition: 0.3s; }
-      .main-content { margin-left: 0; padding: 20px; }
+    .sidebar-menu li {
+      margin-bottom: 20px;
     }
-
-    .stat-card { background: #fff; border: none; border-radius: 20px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: transform 0.2s; }
-    .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-    .stat-title { font-size: 0.9rem; color: var(--text-sub); font-weight: 600; margin-bottom: 8px; }
-    .stat-value { font-size: 1.6rem; font-weight: 800; color: #0f172a; margin: 0; }
-    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-bottom: 16px; }
-    
-    .bg-indigo { background: #e0e7ff; color: #4f46e5; }
-    .bg-emerald { background: #dcfce7; color: #16a34a; }
-    .bg-rose { background: #ffe4e6; color: #e11d48; }
-
-    .content-box { background: #fff; border-radius: 20px; padding: 30px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-top: 30px; }
-    
-    .table thead th { background: #f8fafc; color: var(--text-sub); font-weight: 600; font-size: 0.85rem; border: none; padding: 15px; }
-    .table tbody td { padding: 16px 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
-    
-    .badge-soft { padding: 6px 12px; border-radius: 30px; font-size: 0.75rem; font-weight: 600; }
-    .status-done { background: #dcfce7; color: #166534; }
-    .status-wait { background: #eff6ff; color: #1e40af; }
-
-    .input-interest { border: none; background: #f8fafc; text-align: right; width: 100%; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
-    .input-interest:focus { outline: 2px solid var(--accent-color); background: #fff; }
-
-    .hide { display: none !important; }
+    .sidebar-menu li a {
+      display: flex;
+      align-items: center;
+      font-size: 1.07rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.17s;
+    }
+    .sidebar-menu li a.active, .sidebar-menu li a:hover {
+      background: #292929;
+      color: #FEE500;
+    }
+    /* ====== 햄버거 버튼 (모바일) ====== */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      width: 38px; height: 38px;
+      border-radius: 8px;
+      background: #232323;
+      border: 1px solid #2e2e2e;
+      margin-right: 8px;
+      z-index: 110;
+    }
+    .hamburger span {
+      height: 4px;
+      background: #FEE500;
+      margin: 5px 0;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+    /* ====== 메인 현황판 ====== */
+    .main {
+      flex: 1 1 auto;
+      padding: 32px 32px 24px 32px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: #232323;
+      border-radius: 16px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(30,30,30,0.07);
+      border: 1px solid #292929;
+    }
+    .card-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #FEE500;
+      margin-bottom: 6px;
+    }
+    .card-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 14px;
+      background: #16c60c;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    /* ====== 프로젝트 리스트(테이블) ====== */
+    .table-wrap {
+      background: #232323;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(30,30,30,0.06);
+      border: 1px solid #292929;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+    th, td {
+      text-align: left;
+      padding: 14px 10px;
+    }
+    th {
+      color: #FEE500;
+      font-weight: 700;
+      border-bottom: 1.5px solid #292929;
+      background: #232323;
+    }
+    tr {
+      border-bottom: 1px solid #292929;
+    }
+    tr:last-child {
+      border-bottom: none;
+    }
+    .status-on {
+      color: #16c60c;
+      font-weight: 700;
+    }
+    .status-off {
+      color: #bdbdbd;
+      font-weight: 700;
+    }
+    .manage-btn {
+      background: #FEE500;
+      color: #232323;
+      font-weight: 700;
+      border-radius: 7px;
+      padding: 6px 16px;
+      border: none;
+      transition: background 0.15s;
+    }
+    .manage-btn:hover {
+      background: #ffe066;
+    }
+    /* ====== 반응형 ====== */
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      .main {
+        padding: 20px 8px;
+        gap: 20px;
+      }
+    }
+    @media (max-width: 700px) {
+      .sidebar {
+        position: fixed;
+        top: 64px;
+        left: -240px;
+        width: 200px;
+        height: calc(100% - 64px);
+        z-index: 120;
+        background: #232323;
+        box-shadow: 2px 0 16px rgba(30,30,30,0.14);
+        transition: left 0.18s;
+        padding-top: 32px;
+      }
+      .sidebar.open {
+        left: 0;
+      }
+      .hamburger {
+        display: flex;
+      }
+      .container {
+        flex-direction: column;
+      }
+      .main {
+        padding: 20px 4vw;
+      }
+    }
+    @media (max-width: 450px) {
+      .profile-name { display: none; }
+      .header { padding: 10px 6px; }
+      .main { padding: 10px 2vw; }
+      .table-wrap { border-radius: 8px; }
+      .card { border-radius: 8px; padding: 18px 12px; }
+    }
   </style>
 </head>
 <body>
-
-  <nav class="sidebar">
-    <div class="brand"><span>채권 관리</span></div>
-    <div class="nav flex-column" id="nav-menu">
-      <a data-tab="dashboard" class="nav-link active">대시보드</a>
-      <a data-tab="list" class="nav-link">자산 관리</a>
-      <a data-tab="interest" class="nav-link"이자 수취</a>
-      <a data-tab="analytics" class="nav-link"수익 통계</a>
+  <!-- ====== 상단 헤더 ====== -->
+  <header class="header">
+    <div class="profile-wrap">
+      <button class="hamburger" id="hamBtn" aria-label="메뉴 열기/닫기">
+        <!-- 햄버거 아이콘 (3줄) -->
+        <span style="width: 24px;"></span>
+        <span style="width: 24px;"></span>
+        <span style="width: 24px;"></span>
+      </button>
+      <img class="profile-img" src="https://i.ibb.co/6N6dKQb/kakao-profile.png" alt="프로필" />
+      <span class="profile-name">이강현</span>
     </div>
-  </nav>
-
-  <main class="main-content">
-    
-    <div class="d-flex justify-content-between align-items-center mb-5">
-      <div>
-        <h2 id="welcome-text" style="font-weight: 800; margin-bottom: 4px;">안녕하세요 👋</h2>
-      </div>
-      <div id="action-buttons"></div>
-    </div>
-
-    <div id="render-area"></div>
-
-  </main>
-
-  <div class="modal fade" id="addBondModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content" style="border-radius: 24px; border: none; padding: 20px;">
-        <div class="modal-header border-0">
-          <h5 class="modal-title" style="font-weight: 800;">새 채권 등록</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="clock" id="clock">00:00:00</div>
+  </header>
+  <!-- ====== 본문 레이아웃 ====== -->
+  <div class="container">
+    <!-- ====== 좌측 메뉴 ====== -->
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-menu">
+        <li><a href="#" class="active">📊 대시보드</a></li>
+        <li><a href="#">🤖 AI 모델 관리</a></li>
+        <li><a href="#">📈 로그 분석</a></li>
+        <li><a href="#">⚙️ 설정</a></li>
+      </ul>
+    </nav>
+    <!-- ====== 메인 현황판 및 테이블 ====== -->
+    <main class="main">
+      <!-- 현황 카드 그리드 -->
+      <section class="dashboard-grid">
+        <!-- 카드1: 구동 중인 모델 -->
+        <div class="card">
+          <div class="card-title">현재 구동 중인 모델</div>
+          <div class="card-value">5개</div>
         </div>
-        <form id="add-bond-form">
-          <div class="modal-body space-y-4">
-            <div class="mb-3">
-              <label class="form-label font-bold small">채권명</label>
-              <input name="name" required class="form-control rounded-3" placeholder="예: 삼성전자 123">
-            </div>
-            <div class="row mb-3">
-              <div class="col">
-                <label class="form-label small">관리 계좌</label>
-                <input name="account" required class="form-control" placeholder="계좌명">
-              </div>
-              <div class="col">
-                <label class="form-label small">매매이율(%)</label>
-                <input name="rate" type="number" step="0.01" required class="form-control">
-              </div>
-            </div>
-            <div class="row mb-3">
-              <div class="col">
-                <label class="form-label small">매수일</label>
-                <input name="buyDate" type="date" required class="form-control">
-              </div>
-              <div class="col">
-                <label class="form-label small">만기일</label>
-                <input name="maturityDate" type="date" required class="form-control">
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label small">매수금액(원)</label>
-              <input name="buyAmount" type="number" required class="form-control" placeholder="숫자만 입력">
-            </div>
-          </div>
-          <div class="modal-footer border-0">
-            <button type="submit" class="btn btn-dark w-100 rounded-pill py-3">등록 완료</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <!-- 카드2: 오늘 API 호출 수 -->
+        <div class="card">
+          <div class="card-title">오늘 API 호출 수</div>
+          <div class="card-value">12,500회</div>
+        </div>
+        <!-- 카드3: 서버 헬스 체크 -->
+        <div class="card">
+          <div class="card-title">서버 헬스 체크</div>
+          <span class="badge">양호</span>
+        </div>
+      </section>
+      <!-- 프로젝트 리스트 테이블 -->
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>서비스명</th>
+              <th>연결된 모델</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>카카오챗봇</td>
+              <td>Clova</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>AI 상담 서비스</td>
+              <td>GPT</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>음성비서</td>
+              <td>Kanana</td>
+              <td class="status-off">Off</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>이미지 분석</td>
+              <td>Clova</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>텍스트 요약</td>
+              <td>GPT</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- ====== JS: 시계, 햄버거 메뉴, 반응형 ====== -->
   <script>
-    // --- Data & State 없음 ---
-    let activeTab = 'dashboard';
-
-    // --- Main Renderin ---
-    function render() {
-      const area = document.getElementById('render-area');
-      const actionArea = document.getElementById('action-buttons');
-      area.innerHTML = '';
-      actionArea.innerHTML = '';
-
-      if (activeTab === 'dashboard') {
-        area.innerHTML = `
-          <div class="row g-4">
-            <div class="col-md-4"><div class="stat-card"><div class="stat-title">현재 총 투자 원금</div><h3 class="stat-value">0원</h3></div></div>
-            <div class="col-md-4"><div class="stat-card"><div class="stat-title">예상 이자</div><h3 class="stat-value">0원</h3></div></div>
-            <div class="col-md-4"><div class="stat-card"><div class="stat-title">운용 종목 수</div><h3 class="stat-value">0 개</h3></div></div>
-          </div>
-          <div class="content-box"><p class="text-muted text-center">표시할 데이터가 없습니다.</p></div>`;
-      } 
-      else if (activeTab === 'list') {
-        actionArea.innerHTML = `<button class="btn btn-dark rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button>`;
-        area.innerHTML = `<div class="content-box"><p class="text-muted text-center">등록된 채권이 없습니다.</p></div>`;
-      }
-      else if (activeTab === 'interest' || activeTab === 'analytics') {
-        area.innerHTML = `<div class="content-box"><p class="text-muted text-center">데이터가 없어 분석이 불가능합니다.</p></div>`;
-      }
+    // ====== 실시간 시계 (초 단위 갱신) ======
+    function updateClock() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
     }
-    
-    document.getElementById('nav-menu').addEventListener('click', (e) => {
-      if(e.target.dataset.tab) {
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        e.target.classList.add('active');
-        activeTab = e.target.dataset.tab;
-        render();
-      }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ====== 햄버거 메뉴 토글 (모바일) ======
+    const hamBtn = document.getElementById('hamBtn');
+    const sidebar = document.getElementById('sidebar');
+    hamBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('open');
     });
 
-    document.getElementById('add-bond-form').onsubmit = (e) => {
-      e.preventDefault();
-      alert('(테스트 중)데이터가 전송되었습니다.'); 
-      
-      const modalElement = document.getElementById('addBondModal');
-      bootstrap.Modal.getInstance(modalElement).hide();
-      e.target.reset();
-      render();
-    };
-
-    render();
+    // ====== 화면 크기 변경 시 사이드바 자동 닫기 (PC화면 복귀시) ======
+    window.addEventListener('resize', function() {
+      if(window.innerWidth > 700) sidebar.classList.remove('open');
+    });
   </script>
+  <!--
+    [주요 역할별 주석]
+    - .header: 상단 헤더(프로필, 시계)
+    - .sidebar: 좌측 메뉴 (PC 고정, 모바일 토글)
+    - .main: 메인 영역(카드, 테이블)
+    - .dashboard-grid: 현황 카드 Grid
+    - .table-wrap: 서비스 리스트 테이블
+    - JS: 실시간 시계, 햄버거 메뉴, 반응형 처리
+  -->
+</body>
+</html><!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>통합 어드민 대시보드</title>
+  <!-- 카카오 스타일 폰트 적용 (Spoqa Han Sans Neo) -->
+  <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* ====== 기본 스타일 및 다크모드 ====== */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Spoqa Han Sans Neo', 'sans-serif';
+      background: #1e1e1e;
+      color: #fff;
+      height: 100%;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: inherit; text-decoration: none; }
+    button {
+      font-family: inherit;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    /* ====== 상단 헤더 ====== */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #232323;
+      border-bottom: 1px solid #292929;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .profile-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .profile-img {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #FEE500;
+      background: #333;
+    }
+    .profile-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .clock {
+      font-family: 'Spoqa Han Sans Neo', monospace;
+      font-size: 1.1rem;
+      background: #292929;
+      padding: 6px 14px;
+      border-radius: 20px;
+      letter-spacing: 2px;
+      color: #FEE500;
+    }
+    /* ====== 레이아웃 ====== */
+    .container {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+    }
+    /* ====== 좌측 메뉴 ====== */
+    .sidebar {
+      width: 220px;
+      background: #222;
+      border-right: 1px solid #292929;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      transition: left 0.2s;
+      position: relative;
+    }
+    .sidebar-menu {
+      list-style: none;
+      padding: 0 0 0 24px;
+      margin: 0;
+    }
+    .sidebar-menu li {
+      margin-bottom: 20px;
+    }
+    .sidebar-menu li a {
+      display: flex;
+      align-items: center;
+      font-size: 1.07rem;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: background 0.17s;
+    }
+    .sidebar-menu li a.active, .sidebar-menu li a:hover {
+      background: #292929;
+      color: #FEE500;
+    }
+    /* ====== 햄버거 버튼 (모바일) ====== */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      width: 38px; height: 38px;
+      border-radius: 8px;
+      background: #232323;
+      border: 1px solid #2e2e2e;
+      margin-right: 8px;
+      z-index: 110;
+    }
+    .hamburger span {
+      height: 4px;
+      background: #FEE500;
+      margin: 5px 0;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+    /* ====== 메인 현황판 ====== */
+    .main {
+      flex: 1 1 auto;
+      padding: 32px 32px 24px 32px;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+    .card {
+      background: #232323;
+      border-radius: 16px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: 0 2px 8px rgba(30,30,30,0.07);
+      border: 1px solid #292929;
+    }
+    .card-title {
+      font-size: 1.08rem;
+      font-weight: 700;
+      color: #FEE500;
+      margin-bottom: 6px;
+    }
+    .card-value {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 14px;
+      border-radius: 14px;
+      background: #16c60c;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+    /* ====== 프로젝트 리스트(테이블) ====== */
+    .table-wrap {
+      background: #232323;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(30,30,30,0.06);
+      border: 1px solid #292929;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+    }
+    th, td {
+      text-align: left;
+      padding: 14px 10px;
+    }
+    th {
+      color: #FEE500;
+      font-weight: 700;
+      border-bottom: 1.5px solid #292929;
+      background: #232323;
+    }
+    tr {
+      border-bottom: 1px solid #292929;
+    }
+    tr:last-child {
+      border-bottom: none;
+    }
+    .status-on {
+      color: #16c60c;
+      font-weight: 700;
+    }
+    .status-off {
+      color: #bdbdbd;
+      font-weight: 700;
+    }
+    .manage-btn {
+      background: #FEE500;
+      color: #232323;
+      font-weight: 700;
+      border-radius: 7px;
+      padding: 6px 16px;
+      border: none;
+      transition: background 0.15s;
+    }
+    .manage-btn:hover {
+      background: #ffe066;
+    }
+    /* ====== 반응형 ====== */
+    @media (max-width: 900px) {
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+      }
+      .main {
+        padding: 20px 8px;
+        gap: 20px;
+      }
+    }
+    @media (max-width: 700px) {
+      .sidebar {
+        position: fixed;
+        top: 64px;
+        left: -240px;
+        width: 200px;
+        height: calc(100% - 64px);
+        z-index: 120;
+        background: #232323;
+        box-shadow: 2px 0 16px rgba(30,30,30,0.14);
+        transition: left 0.18s;
+        padding-top: 32px;
+      }
+      .sidebar.open {
+        left: 0;
+      }
+      .hamburger {
+        display: flex;
+      }
+      .container {
+        flex-direction: column;
+      }
+      .main {
+        padding: 20px 4vw;
+      }
+    }
+    @media (max-width: 450px) {
+      .profile-name { display: none; }
+      .header { padding: 10px 6px; }
+      .main { padding: 10px 2vw; }
+      .table-wrap { border-radius: 8px; }
+      .card { border-radius: 8px; padding: 18px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ====== 상단 헤더 ====== -->
+  <header class="header">
+    <div class="profile-wrap">
+      <button class="hamburger" id="hamBtn" aria-label="메뉴 열기/닫기">
+        <!-- 햄버거 아이콘 (3줄) -->
+        <span style="width: 24px;"></span>
+        <span style="width: 24px;"></span>
+        <span style="width: 24px;"></span>
+      </button>
+      <img class="profile-img" src="https://i.ibb.co/6N6dKQb/kakao-profile.png" alt="프로필" />
+      <span class="profile-name">이강현</span>
+    </div>
+    <div class="clock" id="clock">00:00:00</div>
+  </header>
+  <!-- ====== 본문 레이아웃 ====== -->
+  <div class="container">
+    <!-- ====== 좌측 메뉴 ====== -->
+    <nav class="sidebar" id="sidebar">
+      <ul class="sidebar-menu">
+        <li><a href="#" class="active">📊 대시보드</a></li>
+        <li><a href="#">🤖 AI 모델 관리</a></li>
+        <li><a href="#">📈 로그 분석</a></li>
+        <li><a href="#">⚙️ 설정</a></li>
+      </ul>
+    </nav>
+    <!-- ====== 메인 현황판 및 테이블 ====== -->
+    <main class="main">
+      <!-- 현황 카드 그리드 -->
+      <section class="dashboard-grid">
+        <!-- 카드1: 구동 중인 모델 -->
+        <div class="card">
+          <div class="card-title">현재 구동 중인 모델</div>
+          <div class="card-value">5개</div>
+        </div>
+        <!-- 카드2: 오늘 API 호출 수 -->
+        <div class="card">
+          <div class="card-title">오늘 API 호출 수</div>
+          <div class="card-value">12,500회</div>
+        </div>
+        <!-- 카드3: 서버 헬스 체크 -->
+        <div class="card">
+          <div class="card-title">서버 헬스 체크</div>
+          <span class="badge">양호</span>
+        </div>
+      </section>
+      <!-- 프로젝트 리스트 테이블 -->
+      <section class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>서비스명</th>
+              <th>연결된 모델</th>
+              <th>상태</th>
+              <th>관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>카카오챗봇</td>
+              <td>Clova</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>AI 상담 서비스</td>
+              <td>GPT</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>음성비서</td>
+              <td>Kanana</td>
+              <td class="status-off">Off</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>이미지 분석</td>
+              <td>Clova</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+            <tr>
+              <td>텍스트 요약</td>
+              <td>GPT</td>
+              <td class="status-on">On</td>
+              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+  <!-- ====== JS: 시계, 햄버거 메뉴, 반응형 ====== -->
+  <script>
+    // ====== 실시간 시계 (초 단위 갱신) ======
+    function updateClock() {
+      const now = new Date();
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      const ss = String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ====== 햄버거 메뉴 토글 (모바일) ======
+    const hamBtn = document.getElementById('hamBtn');
+    const sidebar = document.getElementById('sidebar');
+    hamBtn.addEventListener('click', function() {
+      sidebar.classList.toggle('open');
+    });
+
+    // ====== 화면 크기 변경 시 사이드바 자동 닫기 (PC화면 복귀시) ======
+    window.addEventListener('resize', function() {
+      if(window.innerWidth > 700) sidebar.classList.remove('open');
+    });
+  </script>
+  <!--
+    [주요 역할별 주석]
+    - .header: 상단 헤더(프로필, 시계)
+    - .sidebar: 좌측 메뉴 (PC 고정, 모바일 토글)
+    - .main: 메인 영역(카드, 테이블)
+    - .dashboard-grid: 현황 카드 Grid
+    - .table-wrap: 서비스 리스트 테이블
+    - JS: 실시간 시계, 햄버거 메뉴, 반응형 처리
+  -->
 </body>
 </html>
