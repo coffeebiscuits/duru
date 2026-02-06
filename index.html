@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>채권 관리</title>
+  <title>채권 관리 시스템</title>
   
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
@@ -25,7 +25,6 @@
       letter-spacing: -0.02em;
     }
 
-    /* 사이드바 */
     .sidebar {
       position: fixed; top: 0; bottom: 0; left: 0;
       width: 260px; padding: 30px 20px;
@@ -39,14 +38,12 @@
     }
     .nav-link:hover, .nav-link.active { background-color: rgba(255,255,255,0.1); color: #fff; transform: translateX(4px); }
     
-    /* 메인 영역 */
     .main-content { margin-left: 260px; padding: 40px; }
     @media (max-width: 768px) {
       .sidebar { transform: translateX(-100%); transition: 0.3s; }
       .main-content { margin-left: 0; padding: 20px; }
     }
 
-    /* 카드 디자인 */
     .stat-card { background: #fff; border: none; border-radius: 20px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.02); transition: transform 0.2s; }
     .stat-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
     .stat-title { font-size: 0.9rem; color: var(--text-sub); font-weight: 600; margin-bottom: 8px; }
@@ -57,10 +54,8 @@
     .bg-emerald { background: #dcfce7; color: #16a34a; }
     .bg-rose { background: #ffe4e6; color: #e11d48; }
 
-    /* 컨텐츠 박스 */
     .content-box { background: #fff; border-radius: 20px; padding: 30px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.02); margin-top: 30px; }
     
-    /* 테이블 */
     .table thead th { background: #f8fafc; color: var(--text-sub); font-weight: 600; font-size: 0.85rem; border: none; padding: 15px; }
     .table tbody td { padding: 16px 15px; vertical-align: middle; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
     
@@ -68,7 +63,6 @@
     .status-done { background: #dcfce7; color: #166534; }
     .status-wait { background: #eff6ff; color: #1e40af; }
 
-    /* 이자관리 입력창 전용 */
     .input-interest { border: none; background: #f8fafc; text-align: right; width: 100%; padding: 8px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
     .input-interest:focus { outline: 2px solid var(--accent-color); background: #fff; }
 
@@ -78,7 +72,7 @@
 <body>
 
   <nav class="sidebar">
-    <div class="brand"><span>⚡ 0331 Admin</span></div>
+    <div class="brand"><span>채권 관리</span></div>
     <div class="nav flex-column" id="nav-menu">
       <a data-tab="dashboard" class="nav-link active">📊 대시보드</a>
       <a data-tab="list" class="nav-link">📦 자산 관리</a>
@@ -91,11 +85,10 @@
     
     <div class="d-flex justify-content-between align-items-center mb-5">
       <div>
-        <h2 id="welcome-text" style="font-weight: 800; margin-bottom: 4px;">안녕하세요, 오너님! 👋</h2>
+        <h2 id="welcome-text" style="font-weight: 800; margin-bottom: 4px;">안녕하세요 👋</h2>
         <p id="sub-text" style="color: var(--text-sub); margin: 0;">오늘의 투자 현황입니다.</p>
       </div>
-      <div id="action-buttons">
-        </div>
+      <div id="action-buttons"></div>
     </div>
 
     <div id="render-area"></div>
@@ -118,7 +111,7 @@
             <div class="row mb-3">
               <div class="col">
                 <label class="form-label small">관리 계좌</label>
-                <input name="account" required class="form-control" placeholder="삼성증권">
+                <input name="account" required class="form-control" placeholder="계좌명">
               </div>
               <div class="col">
                 <label class="form-label small">매매이율(%)</label>
@@ -151,11 +144,8 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     // --- Data & State ---
-    let bonds = JSON.parse(localStorage.getItem('bond_manager_v4_data')) || [
-        { id: 1, name: '에스케이하이닉스223-2(사)', account: '삼성증권', buyDate: '2023-08-11', maturityDate: '2026-04-13', rate: 4.02, buyAmount: 6632000, status: 'active', interests: { '2024': { '1': 34000, '4': 34000, '7': 34000, '10': 34000 }, '2025': { '1': 34000, '4': 34000 } } },
-        { id: 2, name: '현대캐피탈1962-3', account: '삼성증권', buyDate: '2023-01-19', maturityDate: '2025-12-22', rate: 5.05, buyAmount: 2051000, status: 'active', interests: { '2024': { '1': 10000, '2': 10000, '12': 10000 }, '2025': { '1': 10000, '2': 10000 } } },
-        { id: 3, name: '삼천리21-2', account: '삼성증권', buyDate: '2024-01-11', maturityDate: '2025-05-28', rate: 3.57, buyAmount: 2929000, status: 'completed', interests: { '2024': { '1': 13000, '4': 13000 } } }
-    ];
+    // 가 데이터를 제거하고 빈 배열로 초기화합니다.
+    let bonds = JSON.parse(localStorage.getItem('bond_manager_v4_data')) || [];
 
     let activeTab = 'dashboard';
     let selectedYear = new Date().getFullYear();
@@ -180,7 +170,7 @@
 
     function renderDashboard(container) {
       const activeBonds = bonds.filter(b => b.status === 'active');
-      const totalInv = activeBonds.reduce((a, c) => a + c.buyAmount, 0);
+      const totalInv = activeBonds.reduce((a, c) => a + Number(c.buyAmount), 0);
       let thisYearIncome = 0;
       bonds.forEach(b => {
         const yData = b.interests?.[new Date().getFullYear()];
@@ -226,7 +216,8 @@
                 <table class="table table-hover">
                   <thead><tr><th>자산명</th><th>상태</th></tr></thead>
                   <tbody>
-                    ${bonds.slice(-4).reverse().map(b => `
+                    ${bonds.length === 0 ? '<tr><td colspan="2" class="text-center py-4 text-muted small">등록된 자산이 없습니다.</td></tr>' : 
+                      bonds.slice(-4).reverse().map(b => `
                       <tr>
                         <td class="small font-bold">${b.name}</td>
                         <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
@@ -275,7 +266,8 @@
                 </tr>
               </thead>
               <tbody>
-                ${bonds.filter(b => b.name.toLowerCase().includes(searchTerm.toLowerCase())).reverse().map(b => `
+                ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-5 text-muted">등록된 데이터가 없습니다. 상단의 버튼을 눌러 새 자산을 등록하세요.</td></tr>' :
+                  bonds.filter(b => b.name.toLowerCase().includes(searchTerm.toLowerCase())).reverse().map(b => `
                   <tr>
                     <td class="font-bold">${b.name}</td>
                     <td class="text-secondary">${b.account}</td>
@@ -303,7 +295,7 @@
         <div class="content-box mt-0 overflow-hidden">
           <div class="d-flex gap-3 align-items-center mb-4">
              <select onchange="changeYear(this.value)" class="form-select w-auto rounded-pill border-0 bg-light font-bold">
-                ${[2024, 2025, 2026].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>${y}년 데이터</option>`).join('')}
+                ${[2024, 2025, 2026, 2027, 2028].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>${y}년 데이터</option>`).join('')}
              </select>
              <p class="text-secondary m-0 small">※ 월별 수령하신 이자 금액을 직접 입력하세요.</p>
           </div>
@@ -317,7 +309,8 @@
                 </tr>
               </thead>
               <tbody>
-                ${bonds.map(b => {
+                ${bonds.length === 0 ? '<tr><td colspan="14" class="text-center py-5 text-muted">이자 데이터를 관리할 자산이 없습니다.</td></tr>' :
+                  bonds.map(b => {
                   const yData = b.interests?.[selectedYear] || {};
                   const rowTotal = Object.values(yData).reduce((a,b)=>a+(Number(b)||0), 0);
                   return `
@@ -342,7 +335,7 @@
     }
 
     function renderAnalytics(container) {
-      const totalLife = bonds.reduce((a, c) => a + c.buyAmount, 0);
+      const totalLife = bonds.reduce((a, c) => a + Number(c.buyAmount), 0);
       let totalProfit = 0;
       bonds.forEach(b => Object.values(b.interests || {}).forEach(y => Object.values(y).forEach(v => totalProfit += (Number(v)||0))));
 
@@ -408,6 +401,7 @@
     window.updateInterest = (id, year, month, val) => {
       bonds = bonds.map(b => {
         if(b.id === id) {
+          if(!b.interests) b.interests = {};
           if(!b.interests[year]) b.interests[year] = {};
           b.interests[year][month] = val;
         }
@@ -419,7 +413,6 @@
     window.handleSearch = (val) => { searchTerm = val; render(); };
     window.changeYear = (val) => { selectedYear = val; render(); };
 
-    // Navigation
     document.getElementById('nav-menu').addEventListener('click', (e) => {
       if(e.target.dataset.tab) {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -429,7 +422,6 @@
       }
     });
 
-    // Form Submit
     document.getElementById('add-bond-form').onsubmit = (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
@@ -445,12 +437,13 @@
         interests: {}
       });
       saveData();
-      bootstrap.Modal.getInstance(document.getElementById('addBondModal')).hide();
+      const modalElement = document.getElementById('addBondModal');
+      const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+      modalInstance.hide();
       render();
       e.target.reset();
     };
 
-    // Initial Start
     render();
   </script>
 </body>
