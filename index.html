@@ -143,276 +143,35 @@
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // --- Data & State ---
-    // 가 데이터를 제거하고 빈 배열로 초기화합니다.
-    let bonds = JSON.parse(localStorage.getItem('bond_manager_v4_data')) || [];
-
+    // --- Data & State 없음 (저장 및 유지 기능 일체 삭제) ---
     let activeTab = 'dashboard';
-    let selectedYear = new Date().getFullYear();
-    let searchTerm = '';
-    let currentChart = null;
 
-    const formatKRW = (v) => new Intl.NumberFormat('ko-KR').format(v) + '원';
-    const saveData = () => localStorage.setItem('bond_manager_v4_data', JSON.stringify(bonds));
-
-    // --- Main Rendering ---
+    // --- Main Rendering (정적 레이아웃만 출력) ---
     function render() {
       const area = document.getElementById('render-area');
       const actionArea = document.getElementById('action-buttons');
       area.innerHTML = '';
       actionArea.innerHTML = '';
 
-      if (activeTab === 'dashboard') renderDashboard(area);
-      else if (activeTab === 'list') renderList(area, actionArea);
-      else if (activeTab === 'interest') renderInterest(area);
-      else if (activeTab === 'analytics') renderAnalytics(area);
-    }
-
-    function renderDashboard(container) {
-      const activeBonds = bonds.filter(b => b.status === 'active');
-      const totalInv = activeBonds.reduce((a, c) => a + Number(c.buyAmount), 0);
-      let thisYearIncome = 0;
-      bonds.forEach(b => {
-        const yData = b.interests?.[new Date().getFullYear()];
-        if(yData) Object.values(yData).forEach(v => thisYearIncome += (Number(v)||0));
-      });
-
-      container.innerHTML = `
-        <div class="row g-4">
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon bg-indigo">💰</div>
-              <div class="stat-title">현재 총 투자 원금</div>
-              <h3 class="stat-value">${formatKRW(totalInv)}</h3>
-            </div>
+      if (activeTab === 'dashboard') {
+        area.innerHTML = `
+          <div class="row g-4">
+            <div class="col-md-4"><div class="stat-card"><div class="stat-title">현재 총 투자 원금</div><h3 class="stat-value">0원</h3></div></div>
+            <div class="col-md-4"><div class="stat-card"><div class="stat-title">예상 이자</div><h3 class="stat-value">0원</h3></div></div>
+            <div class="col-md-4"><div class="stat-card"><div class="stat-title">운용 종목 수</div><h3 class="stat-value">0 개</h3></div></div>
           </div>
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon bg-emerald">💎</div>
-              <div class="stat-title">${new Date().getFullYear()}년 예상 이자</div>
-              <h3 class="stat-value">${formatKRW(thisYearIncome)}</h3>
-            </div>
-          </div>
-          <div class="col-md-4">
-            <div class="stat-card">
-              <div class="stat-icon bg-rose">📦</div>
-              <div class="stat-title">운용 종목 수</div>
-              <h3 class="stat-value">${activeBonds.length} 개</h3>
-            </div>
-          </div>
-        </div>
-
-        <div class="row mt-4">
-          <div class="col-lg-8">
-            <div class="content-box">
-              <h5 style="font-weight: 700; margin-bottom: 20px;">자산 비중 (Top 5)</h5>
-              <canvas id="dashChart" height="120"></canvas>
-            </div>
-          </div>
-          <div class="col-lg-4">
-            <div class="content-box">
-              <h5 style="font-weight: 700; margin-bottom: 20px;">최근 등록 자산</h5>
-              <div class="table-responsive">
-                <table class="table table-hover">
-                  <thead><tr><th>자산명</th><th>상태</th></tr></thead>
-                  <tbody>
-                    ${bonds.length === 0 ? '<tr><td colspan="2" class="text-center py-4 text-muted small">등록된 자산이 없습니다.</td></tr>' : 
-                      bonds.slice(-4).reverse().map(b => `
-                      <tr>
-                        <td class="small font-bold">${b.name}</td>
-                        <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
-                      </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-
-      const ctx = document.getElementById('dashChart').getContext('2d');
-      if(currentChart) currentChart.destroy();
-      currentChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels: activeBonds.slice(0, 5).map(b => b.name),
-          datasets: [{ data: activeBonds.slice(0, 5).map(b => b.buyAmount), backgroundColor: '#6366f1', borderRadius: 10 }]
-        },
-        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } }
-      });
-    }
-
-    function renderList(container, actionArea) {
-      actionArea.innerHTML = `<button class="btn btn-dark rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button>`;
-      
-      container.innerHTML = `
-        <div class="content-box mt-0">
-          <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 style="font-weight: 700; margin: 0;">전체 채권 포트폴리오</h5>
-            <input type="text" id="listSearch" oninput="handleSearch(this.value)" placeholder="검색..." class="form-control form-control-sm w-auto rounded-pill px-3" value="${searchTerm}">
-          </div>
-          <div class="table-responsive">
-            <table class="table table-hover">
-              <thead>
-                <tr>
-                  <th>채권명</th>
-                  <th>계좌</th>
-                  <th>매수금액</th>
-                  <th>이율</th>
-                  <th>만기일</th>
-                  <th>상태</th>
-                  <th>관리</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-5 text-muted">등록된 데이터가 없습니다. 상단의 버튼을 눌러 새 자산을 등록하세요.</td></tr>' :
-                  bonds.filter(b => b.name.toLowerCase().includes(searchTerm.toLowerCase())).reverse().map(b => `
-                  <tr>
-                    <td class="font-bold">${b.name}</td>
-                    <td class="text-secondary">${b.account}</td>
-                    <td class="font-bold">${formatKRW(b.buyAmount)}</td>
-                    <td class="text-primary font-bold">${b.rate}%</td>
-                    <td class="text-secondary">${b.maturityDate}</td>
-                    <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'상환완료'}</span></td>
-                    <td>
-                      <div class="btn-group">
-                        ${b.status==='active' ? `<button onclick="toggleStatus(${b.id})" class="btn btn-sm btn-outline-success border-0">✔️</button>` : ''}
-                        <button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0">🗑️</button>
-                      </div>
-                    </td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderInterest(container) {
-      container.innerHTML = `
-        <div class="content-box mt-0 overflow-hidden">
-          <div class="d-flex gap-3 align-items-center mb-4">
-             <select onchange="changeYear(this.value)" class="form-select w-auto rounded-pill border-0 bg-light font-bold">
-                ${[2024, 2025, 2026, 2027, 2028].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>${y}년 데이터</option>`).join('')}
-             </select>
-             <p class="text-secondary m-0 small">※ 월별 수령하신 이자 금액을 직접 입력하세요.</p>
-          </div>
-          <div class="table-responsive" style="max-height: 600px;">
-            <table class="table table-sm text-center">
-              <thead class="sticky-top">
-                <tr>
-                  <th class="text-start">자산명</th>
-                  <th class="bg-indigo text-white">합계</th>
-                  ${Array.from({length:12}).map((_, i) => `<th>${i+1}월</th>`).join('')}
-                </tr>
-              </thead>
-              <tbody>
-                ${bonds.length === 0 ? '<tr><td colspan="14" class="text-center py-5 text-muted">이자 데이터를 관리할 자산이 없습니다.</td></tr>' :
-                  bonds.map(b => {
-                  const yData = b.interests?.[selectedYear] || {};
-                  const rowTotal = Object.values(yData).reduce((a,b)=>a+(Number(b)||0), 0);
-                  return `
-                    <tr>
-                      <td class="text-start font-bold small" style="min-width:180px">${b.name}</td>
-                      <td class="bg-light font-bold">${rowTotal.toLocaleString()}</td>
-                      ${Array.from({length:12}).map((_, i) => `
-                        <td style="min-width:80px">
-                          <input type="number" value="${yData[i+1]||''}" 
-                            onchange="updateInterest(${b.id}, ${selectedYear}, ${i+1}, this.value)"
-                            class="input-interest">
-                        </td>
-                      `).join('')}
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    function renderAnalytics(container) {
-      const totalLife = bonds.reduce((a, c) => a + Number(c.buyAmount), 0);
-      let totalProfit = 0;
-      bonds.forEach(b => Object.values(b.interests || {}).forEach(y => Object.values(y).forEach(v => totalProfit += (Number(v)||0))));
-
-      const monthlyData = Array(12).fill(0).map((_, i) => {
-        let sum = 0;
-        bonds.forEach(b => sum += (Number(b.interests?.[selectedYear]?.[i+1]) || 0));
-        return sum;
-      });
-
-      container.innerHTML = `
-        <div class="row g-4">
-          <div class="col-md-6">
-            <div class="stat-card">
-              <div class="stat-title">누적 총 투자 (역대 합산)</div>
-              <h3 class="stat-value">${formatKRW(totalLife)}</h3>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="stat-card">
-              <div class="stat-title text-emerald">누적 이자 수익</div>
-              <h3 class="stat-value text-emerald">${formatKRW(totalProfit)}</h3>
-            </div>
-          </div>
-        </div>
-        <div class="content-box">
-          <h5 style="font-weight: 700; margin-bottom: 20px;">${selectedYear}년 월별 수익 흐름</h5>
-          <canvas id="anaChart" height="100"></canvas>
-        </div>
-      `;
-
-      const ctx = document.getElementById('anaChart').getContext('2d');
-      let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-      gradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
-      gradient.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
-
-      if(currentChart) currentChart.destroy();
-      currentChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: Array.from({length:12}, (_, i) => `${i+1}월`),
-          datasets: [{
-            data: monthlyData, borderColor: '#6366f1', backgroundColor: gradient,
-            fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4
-          }]
-        },
-        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
-      });
-    }
-
-    // --- Actions ---
-    window.toggleStatus = (id) => {
-      bonds = bonds.map(b => b.id === id ? {...b, status: 'completed'} : b);
-      saveData(); render();
-    };
-
-    window.deleteBond = (id) => {
-      if(confirm('정말 삭제하시겠습니까?')) {
-        bonds = bonds.filter(b => b.id !== id);
-        saveData(); render();
+          <div class="content-box"><p class="text-muted text-center">표시할 데이터가 없습니다.</p></div>`;
+      } 
+      else if (activeTab === 'list') {
+        actionArea.innerHTML = `<button class="btn btn-dark rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button>`;
+        area.innerHTML = `<div class="content-box"><p class="text-muted text-center">등록된 채권이 없습니다.</p></div>`;
       }
-    };
+      else if (activeTab === 'interest' || activeTab === 'analytics') {
+        area.innerHTML = `<div class="content-box"><p class="text-muted text-center">데이터가 없어 분석이 불가능합니다.</p></div>`;
+      }
+    }
 
-    window.updateInterest = (id, year, month, val) => {
-      bonds = bonds.map(b => {
-        if(b.id === id) {
-          if(!b.interests) b.interests = {};
-          if(!b.interests[year]) b.interests[year] = {};
-          b.interests[year][month] = val;
-        }
-        return b;
-      });
-      saveData(); render();
-    };
-
-    window.handleSearch = (val) => { searchTerm = val; render(); };
-    window.changeYear = (val) => { selectedYear = val; render(); };
-
+    // --- Actions (데이터를 어디에도 저장하지 않음) ---
     document.getElementById('nav-menu').addEventListener('click', (e) => {
       if(e.target.dataset.tab) {
         document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -424,24 +183,13 @@
 
     document.getElementById('add-bond-form').onsubmit = (e) => {
       e.preventDefault();
-      const fd = new FormData(e.target);
-      bonds.push({
-        id: Date.now(),
-        name: fd.get('name'),
-        account: fd.get('account'),
-        buyDate: fd.get('buyDate'),
-        maturityDate: fd.get('maturityDate'),
-        rate: fd.get('rate'),
-        buyAmount: Number(fd.get('buyAmount')),
-        status: 'active',
-        interests: {}
-      });
-      saveData();
+      // 입력값을 확인만 할 뿐, 배열(bonds)에 푸시하거나 저장하는 로직 삭제
+      alert('데이터가 전송되었으나, 저장 기능이 없어 폐기되었습니다.'); 
+      
       const modalElement = document.getElementById('addBondModal');
-      const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
-      modalInstance.hide();
-      render();
+      bootstrap.Modal.getInstance(modalElement).hide();
       e.target.reset();
+      render();
     };
 
     render();
