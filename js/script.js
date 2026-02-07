@@ -22,22 +22,40 @@ window.onload = async () => {
 
 // ====== [1] 새 파일 만들기 (New) ======
 document.getElementById('btn-new-db').addEventListener('click', async () => {
+  // 1. 사용자 의도 확인 (요청하신 문구 출력)
+  const isConfirmed = confirm("새 DB 파일을 만드시겠습니까?\n확인을 누르면 저장 위치 지정 창이 열립니다.");
+  
+  // 취소를 누르면 아무것도 하지 않고 함수 종료
+  if (!isConfirmed) return;
+
+  // 2. DB 메모리 초기화
   db = new SQL.Database();
   createTables();
   
   try {
-    // 저장할 파일 위치를 먼저 지정받음 (핸들 확보)
+    // 3. 저장 위치 지정 (File Picker)
     if (window.showSaveFilePicker) {
       fileHandle = await window.showSaveFilePicker({
         suggestedName: 'my_bonds.db',
         types: [{ description: 'SQLite DB', accept: {'application/x-sqlite3': ['.db']} }]
       });
-      await autoSave(); // 빈 파일 최초 저장
+      // 4. 위치 지정 후 즉시 파일 생성 및 저장
+      await autoSave(); 
+    } else {
+      // (구형 브라우저 대응) 파일 선택기가 없으면 다운로드 방식으로 즉시 저장
+      alert("이 브라우저는 저장 위치 지정 기능을 완벽히 지원하지 않아, 기본 다운로드 폴더에 저장됩니다.");
+      await autoSave();
     }
+
+    // 5. 화면 갱신 및 모달 닫기
     bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
     render();
+
   } catch (err) {
-    if(err.name !== 'AbortError') alert('파일 생성 중 오류: ' + err);
+    // 사용자가 저장 창에서 '취소'를 누른 경우 에러가 아니라 그냥 무시
+    if(err.name !== 'AbortError') {
+        alert('파일 생성 중 오류가 발생했습니다: ' + err);
+    }
   }
 });
 
