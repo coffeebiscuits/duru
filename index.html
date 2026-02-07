@@ -44,7 +44,7 @@
     <div class="modal-dialog modal-dialog-centered modal-lg">
       <div class="modal-content text-center p-5 border-0 shadow-lg">
         <h2 class="mb-3 fw-bold" style="color:#1e293b;">🌿 채권 관리 시작하기</h2>
-        <p class="text-secondary mb-5">서버 없이, <b>로컬 파일</b>에 실시간으로 자동 저장됩니다.</p>
+        <p class="text-secondary mb-5">안전하게 <b>내 기기에서</b>관리할 수 있습니다.</p>
         
         <div class="row g-4 justify-content-center">
           <div class="col-md-5">
@@ -75,21 +75,46 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-0">
-          <h5 class="modal-title modal-title-custom">새 채권 등록</h5>
+          <h5 class="modal-title modal-title-custom">채권 등록</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        
         <form id="add-bond-form">
           <div class="modal-body">
-            <div class="mb-3"><label class="form-label text-secondary small fw-bold">채권명</label><input name="name" required class="form-control" placeholder="예: 삼성전자 123"></div>
-            <div class="row mb-3">
-              <div class="col"><label class="form-label text-secondary small fw-bold">계좌명</label><input name="account" required class="form-control"></div>
-              <div class="col"><label class="form-label text-secondary small fw-bold">이율(%)</label><input name="rate" type="number" step="0.01" required class="form-control"></div>
+            <div class="mb-3">
+              <label class="form-label text-secondary small fw-bold">채권명</label>
+              <input name="name" required class="form-control" placeholder="예: 삼성전자 123">
             </div>
             <div class="row mb-3">
-              <div class="col"><label class="form-label text-secondary small fw-bold">매수일</label><input name="buyDate" type="date" required class="form-control"></div>
-              <div class="col"><label class="form-label text-secondary small fw-bold">만기일</label><input name="maturityDate" type="date" required class="form-control"></div>
+              <div class="col">
+                <label class="form-label text-secondary small fw-bold">계좌명</label>
+                <input name="account" required class="form-control">
+              </div>
+              <div class="col">
+                <label class="form-label text-secondary small fw-bold">이율(%)</label>
+                <input name="rate" type="number" step="0.01" required class="form-control">
+              </div>
             </div>
-            <div class="mb-3"><label class="form-label text-secondary small fw-bold">매수금액(원)</label><input name="buyAmount" type="number" required class="form-control"></div>
+            <div class="row mb-3">
+              <div class="col">
+                <label class="form-label text-secondary small fw-bold">매수일</label>
+                <input name="buyDate" type="date" required class="form-control">
+              </div>
+              <div class="col">
+                <label class="form-label text-secondary small fw-bold">만기일</label>
+                <input name="maturityDate" type="date" required class="form-control">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col">
+                <label class="form-label text-secondary small fw-bold">수량</label>
+                <input name="quantity" type="number" required class="form-control" placeholder="개/주">
+              </div>
+              <div class="col">
+                <label class="form-label text-secondary small fw-bold">매수금액(원)</label>
+                <input name="buyAmount" type="number" required class="form-control">
+              </div>
+            </div>
           </div>
           <div class="modal-footer border-0">
             <button type="submit" class="btn btn-primary-custom w-100 py-3 rounded-3 shadow-sm">등록 완료</button>
