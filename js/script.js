@@ -205,11 +205,11 @@ function renderDashboard(container, bonds) {
   });
 
   container.innerHTML = `
-    <h3 class="mb-4 fw-bold">안녕하세요 👋 <span class="fs-6 fw-normal text-secondary">오늘의 투자 현황입니다.</span></h3>
+    <h3 class="mb-4 fw-bold">안녕하세요 <span class="fs-6 fw-normal text-secondary">채권 투자 현황입니다.</span></h3>
     <div class="row g-4">
       <div class="col-md-4"><div class="stat-card"><div class="stat-title">현재 총 투자 원금</div><div class="stat-value" style="color:var(--accent-color);">${formatKRW(totalInv)}</div></div></div>
       <div class="col-md-4"><div class="stat-card"><div class="stat-title">${new Date().getFullYear()}년 예상 이자</div><div class="stat-value">${formatKRW(thisYearIncome)}</div></div></div>
-      <div class="col-md-4"><div class="stat-card"><div class="stat-title">운용 종목 수</div><div class="stat-value">${activeBonds.length} 개</div></div></div>
+      <div class="col-md-4"><div class="stat-card"><div class="stat-title">보유 채권 상품 수</div><div class="stat-value">${activeBonds.length} 개</div></div></div>
     </div>
     <div class="row mt-4">
       <div class="col-lg-8"><div class="content-box"><h5 class="fw-bold mb-4">자산 비중 (Top 5)</h5><canvas id="dashChart" height="100"></canvas></div></div>
@@ -226,10 +226,22 @@ function renderDashboard(container, bonds) {
 function renderList(container, bonds) {
   container.innerHTML = `
     <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">채권 관리</h3>
-    <button class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBondModal">
-    + 채권 등록</button></div>
-    <div class="content-box mt-0"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>채권명</th><th>계좌</th><th>매수금액</th><th>이율</th><th>만기일</th><th>상태/손익</th><th>관리</th></tr></thead><tbody>
-    ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-5 text-muted">데이터가 없습니다.</td></tr>' : 
+    <button class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 채권 등록</button></div>
+    <div class="content-box mt-0"><div class="table-responsive"><table class="table table-hover">
+    <thead>
+        <tr>
+            <th>채권명</th>
+            <th>계좌</th>
+            <th>수량</th>
+            <th>매수금액</th>
+            <th>이율</th>
+            <th>만기일</th>
+            <th>상태/손익</th>
+            <th>관리</th>
+        </tr>
+    </thead>
+    <tbody>
+    ${bonds.length === 0 ? '<tr><td colspan="8" class="text-center py-5 text-muted">데이터가 없습니다.</td></tr>' : 
       bonds.slice().reverse().map(b => {
         let statusBadge = `<span class="badge-soft status-wait">보유중</span>`, profitText = '';
         if(b.status === 'completed') {
@@ -237,8 +249,21 @@ function renderList(container, bonds) {
           const diff = (b.redemptionAmount || b.buyAmount) - b.buyAmount;
           profitText = diff > 0 ? `<div class="profit-plus mt-1">+${formatKRW(diff)}</div>` : (diff < 0 ? `<div class="profit-minus mt-1">${formatKRW(diff)}</div>` : `<div class="text-secondary small mt-1">원금상환</div>`);
         }
-        return `<tr><td class="fw-bold">${b.name}</td><td class="text-secondary small">${b.account}</td><td class="fw-bold text-dark">${formatKRW(b.buyAmount)}</td><td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td><td class="text-secondary small">${b.maturityDate}</td><td>${statusBadge}${profitText}</td>
-        <td><button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0 rounded-circle">🗑️</button>${b.status==='active' ? `<button onclick="toggleStatus(${b.id}, '${b.name}', ${b.buyAmount})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1">✔️</button>` : ''}</td></tr>`;
+        
+        return `<tr>
+            <td class="fw-bold text-primary text-decoration-underline" style="cursor:pointer;" onclick="openEditModal(${b.id})">
+                ${b.name}
+            </td>
+            <td class="text-secondary small">${b.account}</td>
+            <td class="text-dark">${b.quantity ? Number(b.quantity).toLocaleString() : 0}</td>
+            <td class="fw-bold text-dark">${formatKRW(b.buyAmount)}</td>
+            <td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td>
+            <td class="text-secondary small">${b.maturityDate}</td>
+            <td>${statusBadge}${profitText}</td>
+            <td>
+                ${b.status==='active' ? `<button onclick="toggleStatus(${b.id}, '${b.name}', ${b.buyAmount})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1">✔️</button>` : ''}
+            </td>
+        </tr>`;
       }).join('')}
     </tbody></table></div></div>
   `;
@@ -333,3 +358,74 @@ window.updateInterest = (id, y, m, v) => {
 };
 
 window.changeYear = (v) => { selectedYear = v; render(); };
+
+
+// ====== 채권 수정/삭제 모달 로직 ======
+// 1. 모달 열기 및 데이터 바인딩
+window.openEditModal = (id) => {
+  if (!db) return;
+  
+  // DB에서 해당 ID의 데이터 조회
+  const stmt = db.prepare("SELECT * FROM bonds WHERE id = :id");
+  stmt.bind({':id': id});
+  if (stmt.step()) {
+    const bond = stmt.getAsObject();
+    
+    // 폼에 데이터 채우기
+    const form = document.getElementById('edit-bond-form');
+    form.querySelector('[name=id]').value = bond.id;
+    form.querySelector('[name=name]').value = bond.name;
+    form.querySelector('[name=account]').value = bond.account;
+    form.querySelector('[name=rate]').value = bond.rate;
+    form.querySelector('[name=buyDate]').value = bond.buyDate;
+    form.querySelector('[name=maturityDate]').value = bond.maturityDate;
+    form.querySelector('[name=quantity]').value = bond.quantity || 0;
+    form.querySelector('[name=buyAmount]').value = bond.buyAmount;
+    
+    // 삭제 버튼에 ID 연결 (클로저 회피를 위해 onclick 재정의)
+    document.getElementById('btn-delete-on-modal').onclick = () => {
+        if(confirm('정말 이 채권 데이터를 삭제하시겠습니까?')) {
+            // 기존 deleteBond 함수 재사용
+            runQuery("DELETE FROM bonds WHERE id = ?", [bond.id]);
+            runQuery("DELETE FROM interests WHERE bond_id = ?", [bond.id]);
+            
+            // 모달 닫기 및 렌더링
+            bootstrap.Modal.getInstance(document.getElementById('editBondModal')).hide();
+            render();
+        }
+    };
+
+    // 모달 띄우기
+    new bootstrap.Modal(document.getElementById('editBondModal')).show();
+  }
+  stmt.free();
+};
+
+// 2. 수정 폼 제출 핸들러 (UPDATE)
+document.getElementById('edit-bond-form').onsubmit = (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const id = fd.get('id');
+
+  // DB 업데이트 실행
+  runQuery(`UPDATE bonds SET 
+    name=?, account=?, rate=?, buyDate=?, maturityDate=?, quantity=?, buyAmount=?
+    WHERE id=?`, 
+    [
+      fd.get('name'), 
+      fd.get('account'), 
+      fd.get('rate'), 
+      fd.get('buyDate'), 
+      fd.get('maturityDate'), 
+      Number(fd.get('quantity')),
+      Number(fd.get('buyAmount')),
+      id
+    ]);
+
+  // 모달 닫기 및 화면 갱신
+  bootstrap.Modal.getInstance(document.getElementById('editBondModal')).hide();
+  render();
+};
+
+
+
