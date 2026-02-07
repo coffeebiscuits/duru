@@ -5,10 +5,10 @@ let fileHandle = null;
 let activeTab = 'dashboard';
 let selectedYear = new Date().getFullYear();
 let currentChart = null;
+let listFilter = 'all'; 
 
 const formatKRW = (v) => new Intl.NumberFormat('ko-KR').format(v) + '원';
 
-// ====== [1] 메인 실행 (페이지 로드 후 작동) ======
 window.onload = async () => {
   const config = { locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}` };
   try {
@@ -30,6 +30,12 @@ window.onload = async () => {
 
   bindAllEvents();
 };
+
+window.setListFilter = (filter) => {
+  listFilter = filter;
+  render();
+};
+
 
 // ====== [2] 이벤트 리스너 통합 바인딩 ======
 function bindAllEvents() {
@@ -364,12 +370,28 @@ function renderDashboard(container, bonds) {
   }
 }
 
+
 function renderList(container, bonds) {
+  // 1. 상태에 따른 필터링 로직 적용
+  const filteredBonds = bonds.filter(b => {
+    if (listFilter === 'all') return true;
+    if (listFilter === 'active') return b.status === 'active';
+    if (listFilter === 'completed') return b.status === 'completed';
+    return true;
+  });
+
   container.innerHTML = `
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h3 class="fw-bold">채권 관리</h3>
       <button class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 채권 등록</button>
     </div>
+
+    <div class="mb-4 d-flex gap-2">
+      <button onclick="setListFilter('all')" class="btn ${listFilter === 'all' ? 'btn-dark' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">전체</button>
+      <button onclick="setListFilter('active')" class="btn ${listFilter === 'active' ? 'btn-success' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">보유중</button>
+      <button onclick="setListFilter('completed')" class="btn ${listFilter === 'completed' ? 'btn-primary' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">상환완료</button>
+    </div>
+
     <div class="content-box mt-0">
       <div class="table-responsive">
         <table class="table table-hover">
@@ -387,8 +409,8 @@ function renderList(container, bonds) {
             </tr>
           </thead>
           <tbody>
-          ${bonds.length === 0 ? '<tr><td colspan="9" class="text-center py-5 text-muted">데이터가 없습니다.</td></tr>' : 
-            bonds.slice().reverse().map(b => {
+          ${filteredBonds.length === 0 ? `<tr><td colspan="9" class="text-center py-5 text-muted">${listFilter === 'all' ? '데이터가 없습니다.' : '해당 조건의 채권이 없습니다.'}</td></tr>` : 
+            filteredBonds.slice().reverse().map(b => {
               // 1. 누적 이자 계산
               let totalInterest = 0;
               if (b.interests) {
@@ -413,7 +435,6 @@ function renderList(container, bonds) {
                 ? `<span class="badge-soft status-done">완료</span>` 
                 : `<span class="badge-soft status-wait">보유중</span>`;
 
-              // 손익 컬러 클래스 결정
               const profitClass = netProfit > 0 ? 'profit-plus' : (netProfit < 0 ? 'profit-minus' : 'text-secondary');
               const sign = netProfit > 0 ? '+' : '';
 
@@ -448,16 +469,80 @@ function renderList(container, bonds) {
   `;
 }
 
+
+// ====== 연도 범위를 동적으로 가져오는 헬퍼 함수 ======
+function getAvailableYears(bonds) {
+  const currentYear = new Date().getFullYear();
+  const years = new Set([currentYear, currentYear + 1]); // 기본적으로 올해와 내년은 포함
+
+  bonds.forEach(b => {
+    if (b.buyDate) years.add(parseInt(b.buyDate.substring(0, 4)));
+    if (b.maturityDate && b.maturityDate !== '9999') {
+        years.add(parseInt(b.maturityDate.substring(0, 4)));
+    }
+    // 이미 이자 기록이 있는 연도도 포함
+    if (b.interests) {
+      Object.keys(b.interests).forEach(y => years.add(parseInt(y)));
+    }
+  });
+
+  // 숫자로 변환 후 오름차순 정렬 (유효하지 않은 연도는 필터링)
+  return Array.from(years)
+    .filter(y => y > 1900 && y < 2100) 
+    .sort((a, b) => a - b);
+}
+
 function renderInterest(container, bonds) {
+  const selYear = parseInt(selectedYear);
+  const yearOptions = getAvailableYears(bonds); // 동적으로 연도 목록 가져오기
+
   container.innerHTML = `
-    <h3 class="mb-4 fw-bold">이자 수취 관리</h3><div class="content-box mt-0"><div class="mb-3"><select onchange="changeYear(this.value)" class="form-select w-auto fw-bold text-secondary border-0 bg-light">${[2024, 2025, 2026, 2027, 2028].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>📅 ${y}년 데이터</option>`).join('')}</select></div>
-    <div class="table-responsive"><table class="table table-bordered text-center" style="border-color:#e2e8f0;"><thead><tr><th class="text-start bg-light">자산명</th><th class="bg-light text-dark">합계</th>${Array.from({length:12}, (_,i)=>`<th>${i+1}월</th>`).join('')}</tr></thead><tbody>
-    ${bonds.map(b => {
-      const yData = b.interests?.[selectedYear] || {};
-      const rowTotal = Object.values(yData).reduce((a,v)=>a+(Number(v)||0), 0);
-      return `<tr><td class="text-start fw-bold text-secondary">${b.name}</td><td class="fw-bold text-dark bg-light">${rowTotal.toLocaleString()}</td>${Array.from({length:12}, (_,i)=>`<td style="min-width:80px;"><input type="number" value="${yData[i+1]||''}" onchange="updateInterest(${b.id}, ${selectedYear}, ${i+1}, this.value)" class="input-interest"></td>`).join('')}</tr>`;
-    }).join('')}
-    </tbody></table></div></div>
+    <h3 class="mb-4 fw-bold">이자 수취 관리</h3>
+    <div class="content-box mt-0">
+      <div class="mb-3">
+        <select onchange="changeYear(this.value)" class="form-select w-auto fw-bold text-secondary border-0 bg-light">
+          ${yearOptions.map(y => `
+            <option value="${y}" ${selYear === y ? 'selected' : ''}>📅 ${y}년 데이터</option>
+          `).join('')}
+        </select>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-bordered text-center" style="border-color:#e2e8f0;">
+          <thead>
+            <tr>
+              <th class="text-start bg-light">자산명</th>
+              <th class="bg-light text-dark">합계</th>
+              ${Array.from({length:12}, (_,i)=>`<th>${i+1}월</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+          ${bonds
+            .filter(b => {
+              if (!b.buyDate) return false;
+              const buyYear = parseInt(b.buyDate.substring(0, 4));
+              const maturityYear = b.maturityDate ? parseInt(b.maturityDate.substring(0, 4)) : 9999;
+              return buyYear <= selYear && maturityYear >= selYear;
+            })
+            .map(b => {
+              const yData = b.interests?.[selYear] || {};
+              const rowTotal = Object.values(yData).reduce((a,v)=>a+(Number(v)||0), 0);
+              return `
+                <tr>
+                  <td class="text-start fw-bold text-secondary">${b.name}</td>
+                  <td class="fw-bold text-dark bg-light">${rowTotal.toLocaleString()}</td>
+                  ${Array.from({length:12}, (_,i)=>`
+                    <td style="min-width:80px;">
+                      <input type="number" value="${yData[i+1]||''}" 
+                        onchange="updateInterest(${b.id}, ${selYear}, ${i+1}, this.value)" 
+                        class="input-interest">
+                    </td>
+                  `).join('')}
+                </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
   `;
 }
 
