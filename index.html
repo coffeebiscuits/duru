@@ -9,15 +9,18 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* ====== 기본 테마 (Dark) ====== */
+    /* ====== 프로핏 그린 테마 (Profit Green) ====== */
     :root {
-      --bg-color: #1e1e1e;
-      --sidebar-bg: #222;
-      --card-bg: #232323;
-      --border-color: #292929;
-      --accent-color: #FEE500;
-      --text-main: #fff;
-      --text-sub: #bdbdbd;
+      --bg-color: #f0fdf4; /* 아주 연한 민트 배경 */
+      --sidebar-bg: #ffffff;
+      --card-bg: #ffffff;
+      --border-color: #dcfce7; /* 연한 그린 보더 */
+      --accent-color: #059669; /* 에메랄드 그린 (메인) */
+      --accent-hover: #047857; /* 다크 그린 (호버) */
+      --text-main: #1e293b; /* 짙은 네이비 (가독성) */
+      --text-sub: #64748b; /* 회색 (부수적 텍스트) */
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
 
     body {
@@ -28,17 +31,16 @@
       overflow-x: hidden;
     }
 
-    /* Bootstrap Overrides for Dark Theme */
-    .modal-content { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); }
-    .form-control { background-color: #333; border: 1px solid #444; color: #fff; }
-    .form-control:focus { background-color: #333; color: #fff; border-color: var(--accent-color); box-shadow: 0 0 0 0.25rem rgba(254, 229, 0, 0.25); }
-    .btn-close { filter: invert(1); }
-
+    /* Bootstrap Overrides */
+    .modal-content { background-color: var(--card-bg); border: 1px solid var(--border-color); box-shadow: var(--shadow-md); }
+    .form-control { background-color: #fff; border: 1px solid #e2e8f0; color: var(--text-main); }
+    .form-control:focus { border-color: var(--accent-color); box-shadow: 0 0 0 0.25rem rgba(5, 150, 105, 0.2); }
+    
     /* ====== 레이아웃 ====== */
     .header {
       display: flex; align-items: center; justify-content: space-between;
       padding: 16px 24px; background: var(--card-bg); border-bottom: 1px solid var(--border-color);
-      position: sticky; top: 0; z-index: 100;
+      position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm);
     }
     .profile-wrap { display: flex; align-items: center; gap: 12px; }
     .profile-name { font-size: 1.1rem; font-weight: 700; color: var(--accent-color); }
@@ -57,7 +59,7 @@
       color: var(--text-sub); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer;
     }
     .sidebar-menu a:hover, .sidebar-menu a.active {
-      background: var(--border-color); color: var(--accent-color); font-weight: 700;
+      background: #ecfdf5; color: var(--accent-color); font-weight: 700; /* 민트색 배경 강조 */
     }
 
     /* ====== 메인 콘텐츠 ====== */
@@ -67,38 +69,41 @@
     .stat-card {
       background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px;
       display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;
+      box-shadow: var(--shadow-sm); transition: transform 0.2s;
     }
-    .stat-title { font-size: 0.95rem; color: var(--text-sub); }
-    .stat-value { font-size: 2rem; font-weight: 700; color: #fff; margin: 0; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .stat-title { font-size: 0.95rem; color: var(--text-sub); font-weight: 600; }
+    .stat-value { font-size: 2rem; font-weight: 800; color: var(--text-main); margin: 0; }
     
     /* 테이블 스타일 */
-    .content-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-top: 24px; }
+    .content-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-top: 24px; box-shadow: var(--shadow-sm); }
     .table { color: var(--text-main); margin-bottom: 0; }
-    .table th { background: var(--card-bg); color: var(--accent-color); border-bottom: 1px solid var(--border-color); border-top: none; }
-    .table td { border-bottom: 1px solid var(--border-color); vertical-align: middle; background: var(--card-bg); color: #fff; }
-    .table-hover tbody tr:hover td { background-color: #2a2a2a; }
+    .table th { background: #f0fdf4; color: var(--accent-color); border-bottom: 1px solid var(--border-color); border-top: none; font-weight: 700; }
+    .table td { border-bottom: 1px solid #e2e8f0; vertical-align: middle; background: var(--card-bg); }
+    .table-hover tbody tr:hover td { background-color: #f8fafc; }
 
     /* 배지 및 버튼 */
     .badge-soft { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
-    .status-wait { background: rgba(22, 198, 12, 0.2); color: #16c60c; }
-    .status-done { background: rgba(189, 189, 189, 0.2); color: #bdbdbd; }
+    .status-wait { background: #dcfce7; color: #15803d; } /* 연한 그린 배경 + 진한 그린 텍스트 */
+    .status-done { background: #f1f5f9; color: #64748b; }
     
-    .btn-primary-custom { background: var(--accent-color); color: #000; font-weight: 700; border: none; }
-    .btn-primary-custom:hover { background: #ffe066; color: #000; }
+    .btn-primary-custom { background: var(--accent-color); color: #fff; font-weight: 700; border: none; transition: background 0.2s; }
+    .btn-primary-custom:hover { background: var(--accent-hover); color: #fff; }
 
-    .input-interest { background: #333; border: 1px solid #444; color: #fff; width: 100%; padding: 4px; text-align: right; border-radius: 4px; }
+    .input-interest { background: #f8fafc; border: 1px solid #e2e8f0; color: var(--text-main); width: 100%; padding: 6px; text-align: right; border-radius: 6px; font-weight: 600; }
+    .input-interest:focus { outline: 2px solid var(--accent-color); background: #fff; }
 
     /* 반응형 */
     @media (max-width: 768px) {
       .container-flex { flex-direction: column; }
-      .sidebar { width: 100%; padding: 10px 0; overflow-x: auto; display: none; } /* 모바일 사이드바 처리 필요 시 수정 */
+      .sidebar { width: 100%; padding: 10px 0; overflow-x: auto; display: none; border-bottom: 1px solid var(--border-color); border-right: none; }
       .sidebar.open { display: block; }
       .main { padding: 16px; }
-      .dashboard-grid { grid-template-columns: 1fr; }
+      .stat-value { font-size: 1.6rem; }
     }
     
     .hamburger { display: none; background: none; border: none; flex-direction: column; justify-content: center; gap: 5px; cursor: pointer; }
-    .hamburger span { width: 24px; height: 2px; background: var(--accent-color); }
+    .hamburger span { width: 24px; height: 3px; background: var(--accent-color); border-radius: 2px; }
     @media (max-width: 768px) { .hamburger { display: flex; } }
   </style>
 </head>
@@ -107,9 +112,9 @@
   <header class="header">
     <div class="profile-wrap">
       <button class="hamburger" id="hamBtn"><span></span><span></span><span></span></button>
-      <span class="profile-name">채권관리</span>
+      <span class="profile-name">🌿 채권관리</span>
     </div>
-    <div style="color: var(--accent-color); font-family: monospace;" id="clock">00:00:00</div>
+    <div style="color: var(--accent-color); font-family: monospace; font-weight: 700;" id="clock">00:00:00</div>
   </header>
 
   <div class="container-flex">
@@ -130,42 +135,42 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header border-0">
-          <h5 class="modal-title" style="color:var(--accent-color); font-weight:700;">새 채권 등록</h5>
+          <h5 class="modal-title" style="color:var(--accent-color); font-weight:800;">새 채권 등록</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <form id="add-bond-form">
           <div class="modal-body">
             <div class="mb-3">
-              <label class="form-label text-secondary small">채권명</label>
+              <label class="form-label text-secondary small fw-bold">채권명</label>
               <input name="name" required class="form-control" placeholder="예: 삼성전자 123">
             </div>
             <div class="row mb-3">
               <div class="col">
-                <label class="form-label text-secondary small">계좌명</label>
+                <label class="form-label text-secondary small fw-bold">계좌명</label>
                 <input name="account" required class="form-control">
               </div>
               <div class="col">
-                <label class="form-label text-secondary small">이율(%)</label>
+                <label class="form-label text-secondary small fw-bold">이율(%)</label>
                 <input name="rate" type="number" step="0.01" required class="form-control">
               </div>
             </div>
             <div class="row mb-3">
               <div class="col">
-                <label class="form-label text-secondary small">매수일</label>
+                <label class="form-label text-secondary small fw-bold">매수일</label>
                 <input name="buyDate" type="date" required class="form-control">
               </div>
               <div class="col">
-                <label class="form-label text-secondary small">만기일</label>
+                <label class="form-label text-secondary small fw-bold">만기일</label>
                 <input name="maturityDate" type="date" required class="form-control">
               </div>
             </div>
             <div class="mb-3">
-              <label class="form-label text-secondary small">매수금액(원)</label>
+              <label class="form-label text-secondary small fw-bold">매수금액(원)</label>
               <input name="buyAmount" type="number" required class="form-control">
             </div>
           </div>
           <div class="modal-footer border-0">
-            <button type="submit" class="btn btn-primary-custom w-100 py-2 rounded-3">등록 완료</button>
+            <button type="submit" class="btn btn-primary-custom w-100 py-3 rounded-3 shadow-sm">등록 완료</button>
           </div>
         </form>
       </div>
@@ -221,12 +226,12 @@
       });
 
       container.innerHTML = `
-        <h3 class="mb-4" style="font-weight:700;">안녕하세요 👋 <span style="font-size:0.9rem; color:var(--text-sub); font-weight:400;">오늘의 투자 현황입니다.</span></h3>
+        <h3 class="mb-4" style="font-weight:800; letter-spacing:-0.5px;">안녕하세요 👋 <span style="font-size:1rem; color:var(--text-sub); font-weight:500; letter-spacing:0;">오늘의 투자 현황입니다.</span></h3>
         <div class="row g-4">
           <div class="col-md-4">
             <div class="stat-card">
               <div class="stat-title">현재 총 투자 원금</div>
-              <div class="stat-value" style="color:#FEE500;">${formatKRW(totalInv)}</div>
+              <div class="stat-value" style="color:var(--accent-color);">${formatKRW(totalInv)}</div>
             </div>
           </div>
           <div class="col-md-4">
@@ -245,19 +250,19 @@
         <div class="row mt-4">
            <div class="col-lg-8">
              <div class="content-box">
-               <h5 style="color:var(--accent-color); margin-bottom:20px;">자산 비중 (Top 5)</h5>
+               <h5 style="color:var(--text-main); font-weight:700; margin-bottom:20px;">자산 비중 (Top 5)</h5>
                <canvas id="dashChart" height="100"></canvas>
              </div>
            </div>
            <div class="col-lg-4">
              <div class="content-box">
-               <h5 style="color:var(--accent-color); margin-bottom:20px;">최근 등록 자산</h5>
-               <table class="table table-hover table-borderless text-white">
+               <h5 style="color:var(--text-main); font-weight:700; margin-bottom:20px;">최근 등록 자산</h5>
+               <table class="table table-hover table-borderless">
                  <thead><tr><th>자산명</th><th>상태</th></tr></thead>
                  <tbody>
                    ${bonds.slice(-4).reverse().map(b => `
                      <tr>
-                       <td>${b.name}</td>
+                       <td class="fw-bold text-secondary">${b.name}</td>
                        <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
                      </tr>
                    `).join('')}
@@ -274,11 +279,11 @@
         type: 'bar',
         data: {
           labels: activeBonds.slice(0, 5).map(b => b.name),
-          datasets: [{ label: '투자금액', data: activeBonds.slice(0, 5).map(b => b.buyAmount), backgroundColor: '#FEE500', borderRadius: 4 }]
+          datasets: [{ label: '투자금액', data: activeBonds.slice(0, 5).map(b => b.buyAmount), backgroundColor: '#059669', borderRadius: 6 }]
         },
         options: {
           plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false } } }
+          scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } }
         }
       });
     }
@@ -286,26 +291,26 @@
     function renderList(container) {
       container.innerHTML = `
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h3 style="font-weight:700;">자산 관리</h3>
-          <button class="btn btn-primary-custom rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button>
+          <h3 style="font-weight:800; letter-spacing:-0.5px;">자산 관리</h3>
+          <button class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button>
         </div>
         <div class="content-box mt-0">
           <div class="table-responsive">
-            <table class="table table-hover text-white">
+            <table class="table table-hover">
               <thead><tr><th>채권명</th><th>계좌</th><th>매수금액</th><th>이율</th><th>만기일</th><th>상태</th><th>관리</th></tr></thead>
               <tbody>
-                ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-4 text-muted">데이터가 없습니다.</td></tr>' : 
+                ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-5 text-muted fw-bold">데이터가 없습니다.</td></tr>' : 
                   bonds.slice().reverse().map(b => `
                   <tr>
-                    <td>${b.name}</td>
-                    <td class="text-secondary">${b.account}</td>
-                    <td>${formatKRW(b.buyAmount)}</td>
-                    <td style="color:#FEE500;">${b.rate}%</td>
-                    <td class="text-secondary">${b.maturityDate}</td>
+                    <td class="fw-bold">${b.name}</td>
+                    <td class="text-secondary small">${b.account}</td>
+                    <td class="fw-bold text-dark">${formatKRW(b.buyAmount)}</td>
+                    <td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td>
+                    <td class="text-secondary small">${b.maturityDate}</td>
                     <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
                     <td>
-                      <button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0">🗑️</button>
-                      ${b.status==='active' ? `<button onclick="toggleStatus(${b.id})" class="btn btn-sm btn-outline-success border-0">✔️</button>` : ''}
+                      <button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0 rounded-circle" title="삭제">🗑️</button>
+                      ${b.status==='active' ? `<button onclick="toggleStatus(${b.id})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1" title="상태변경">✔️</button>` : ''}
                     </td>
                   </tr>`).join('')}
               </tbody>
@@ -317,19 +322,19 @@
 
     function renderInterest(container) {
       container.innerHTML = `
-        <h3 class="mb-4" style="font-weight:700;">이자 수취 관리</h3>
+        <h3 class="mb-4" style="font-weight:800; letter-spacing:-0.5px;">이자 수취 관리</h3>
         <div class="content-box mt-0">
-          <div class="mb-3">
-             <select onchange="changeYear(this.value)" class="form-select w-auto bg-dark text-white border-secondary">
-               ${[2024, 2025, 2026, 2027, 2028].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>${y}년</option>`).join('')}
+          <div class="mb-3 d-flex align-items-center gap-2">
+             <select onchange="changeYear(this.value)" class="form-select w-auto fw-bold text-secondary border-0 bg-light">
+               ${[2024, 2025, 2026, 2027, 2028].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>📅 ${y}년 데이터</option>`).join('')}
              </select>
           </div>
           <div class="table-responsive">
-            <table class="table table-bordered text-center text-white" style="border-color:#333;">
+            <table class="table table-bordered text-center" style="border-color:#e2e8f0;">
               <thead>
                 <tr>
-                  <th class="text-start">자산명</th>
-                  <th>합계</th>
+                  <th class="text-start bg-light">자산명</th>
+                  <th class="bg-light text-dark">합계</th>
                   ${Array.from({length:12}, (_,i)=>`<th>${i+1}월</th>`).join('')}
                 </tr>
               </thead>
@@ -339,10 +344,10 @@
                   const rowTotal = Object.values(yData).reduce((a,v)=>a+(Number(v)||0), 0);
                   return `
                     <tr>
-                      <td class="text-start">${b.name}</td>
-                      <td style="color:#FEE500;">${rowTotal.toLocaleString()}</td>
+                      <td class="text-start fw-bold text-secondary">${b.name}</td>
+                      <td class="fw-bold text-dark bg-light">${rowTotal.toLocaleString()}</td>
                       ${Array.from({length:12}, (_,i)=>`
-                        <td><input type="number" value="${yData[i+1]||''}" onchange="updateInterest(${b.id}, ${selectedYear}, ${i+1}, this.value)" class="input-interest"></td>
+                        <td style="min-width:80px;"><input type="number" value="${yData[i+1]||''}" onchange="updateInterest(${b.id}, ${selectedYear}, ${i+1}, this.value)" class="input-interest"></td>
                       `).join('')}
                     </tr>
                   `;
@@ -365,23 +370,23 @@
       });
 
       container.innerHTML = `
-        <h3 class="mb-4" style="font-weight:700;">수익 통계</h3>
+        <h3 class="mb-4" style="font-weight:800; letter-spacing:-0.5px;">수익 통계</h3>
         <div class="row g-4">
           <div class="col-md-6">
             <div class="stat-card">
               <div class="stat-title">누적 총 투자액</div>
-              <div class="stat-value">${formatKRW(totalLife)}</div>
+              <div class="stat-value text-secondary">${formatKRW(totalLife)}</div>
             </div>
           </div>
           <div class="col-md-6">
             <div class="stat-card">
               <div class="stat-title">누적 이자 수익</div>
-              <div class="stat-value" style="color:#16c60c;">+${formatKRW(totalProfit)}</div>
+              <div class="stat-value" style="color:var(--accent-color);">+${formatKRW(totalProfit)}</div>
             </div>
           </div>
         </div>
         <div class="content-box">
-          <h5 style="color:var(--accent-color);">${selectedYear}년 월별 수익 추이</h5>
+          <h5 style="color:var(--text-main); font-weight:700;">${selectedYear}년 월별 수익 추이</h5>
           <canvas id="anaChart" height="100"></canvas>
         </div>
       `;
@@ -393,20 +398,20 @@
         data: {
           labels: Array.from({length:12}, (_,i)=>`${i+1}월`),
           datasets: [{
-            label: '월별 수익', data: monthlyData, borderColor: '#FEE500', backgroundColor: 'rgba(254, 229, 0, 0.1)',
-            fill: true, tension: 0.4
+            label: '월별 수익', data: monthlyData, borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.1)',
+            fill: true, tension: 0.4, borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#fff', pointBorderColor: '#059669'
           }]
         },
         options: {
           plugins: { legend: { display: false } },
-          scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { color: '#333' } } }
+          scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { color: '#f1f5f9' } } }
         }
       });
     }
 
     // ====== 이벤트 핸들러 ======
     document.getElementById('nav-menu').addEventListener('click', (e) => {
-      const target = e.target.closest('a'); // a 태그 감지
+      const target = e.target.closest('a');
       if (target && target.dataset.tab) {
         activeTab = target.dataset.tab;
         render();
