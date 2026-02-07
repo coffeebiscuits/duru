@@ -5,360 +5,452 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>채권 관리 시스템</title>
   <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
-    /* ====== 기본 스타일 및 다크모드 ====== */
-    html, body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Spoqa Han Sans Neo', 'sans-serif';
-      background: #1e1e1e;
-      color: #fff;
-      height: 100%;
+    /* ====== 기본 테마 (Dark) ====== */
+    :root {
+      --bg-color: #1e1e1e;
+      --sidebar-bg: #222;
+      --card-bg: #232323;
+      --border-color: #292929;
+      --accent-color: #FEE500;
+      --text-main: #fff;
+      --text-sub: #bdbdbd;
     }
+
     body {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    a { color: inherit; text-decoration: none; }
-    button {
-      font-family: inherit;
-      background: none;
-      border: none;
-      cursor: pointer;
-    }
-    /* ====== 상단 헤더 ====== */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 24px;
-      background: #232323;
-      border-bottom: 1px solid #292929;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .profile-wrap {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .profile-name {
-      font-size: 1.1rem;
-      font-weight: 700;
-      color: #FEE500; /* 서비스명 강조를 위해 카카오 옐로우 적용 */
-    }
-    .clock {
-      font-family: 'Spoqa Han Sans Neo', monospace;
-      font-size: 1.1rem;
-      background: #292929;
-      padding: 6px 14px;
-      border-radius: 20px;
-      letter-spacing: 2px;
-      color: #FEE500;
-    }
-    /* ====== 레이아웃 ====== */
-    .container {
-      display: flex;
-      flex: 1 1 auto;
-      min-height: 0;
-    }
-    /* ====== 좌측 메뉴 ====== */
-    .sidebar {
-      width: 220px;
-      background: #222;
-      border-right: 1px solid #292929;
-      display: flex;
-      flex-direction: column;
-      padding: 24px 0;
-      transition: left 0.2s;
-      position: relative;
-    }
-    .sidebar-menu {
-      list-style: none;
-      padding: 0 0 0 24px;
+      font-family: 'Spoqa Han Sans Neo', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
       margin: 0;
+      overflow-x: hidden;
     }
-    .sidebar-menu li {
-      margin-bottom: 20px;
+
+    /* Bootstrap Overrides for Dark Theme */
+    .modal-content { background-color: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); }
+    .form-control { background-color: #333; border: 1px solid #444; color: #fff; }
+    .form-control:focus { background-color: #333; color: #fff; border-color: var(--accent-color); box-shadow: 0 0 0 0.25rem rgba(254, 229, 0, 0.25); }
+    .btn-close { filter: invert(1); }
+
+    /* ====== 레이아웃 ====== */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 24px; background: var(--card-bg); border-bottom: 1px solid var(--border-color);
+      position: sticky; top: 0; z-index: 100;
     }
-    .sidebar-menu li a {
-      display: flex;
-      align-items: center;
-      font-size: 1.07rem;
-      padding: 8px 12px;
-      border-radius: 8px;
-      transition: background 0.17s;
+    .profile-wrap { display: flex; align-items: center; gap: 12px; }
+    .profile-name { font-size: 1.1rem; font-weight: 700; color: var(--accent-color); }
+    
+    .container-flex { display: flex; min-height: calc(100vh - 73px); }
+
+    /* ====== 사이드바 ====== */
+    .sidebar {
+      width: 240px; background: var(--sidebar-bg); border-right: 1px solid var(--border-color);
+      padding: 24px 0; flex-shrink: 0;
     }
-    .sidebar-menu li a.active, .sidebar-menu li a:hover {
-      background: #292929;
-      color: #FEE500;
+    .sidebar-menu { list-style: none; padding: 0 12px; margin: 0; }
+    .sidebar-menu li { margin-bottom: 8px; }
+    .sidebar-menu a {
+      display: block; padding: 12px 16px; border-radius: 8px;
+      color: var(--text-sub); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer;
     }
-    /* ====== 햄버거 버튼 (모바일) ====== */
-    .hamburger {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      width: 38px; height: 38px;
-      border-radius: 8px;
-      background: #232323;
-      border: 1px solid #2e2e2e;
-      margin-right: 8px;
-      z-index: 110;
+    .sidebar-menu a:hover, .sidebar-menu a.active {
+      background: var(--border-color); color: var(--accent-color); font-weight: 700;
     }
-    .hamburger span {
-      height: 4px;
-      background: #FEE500;
-      margin: 5px 0;
-      border-radius: 2px;
-      transition: all 0.2s;
+
+    /* ====== 메인 콘텐츠 ====== */
+    .main { flex: 1; padding: 32px; overflow-y: auto; }
+    
+    /* 카드 스타일 */
+    .stat-card {
+      background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px;
+      display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;
     }
-    /* ====== 메인 현황판 ====== */
-    .main {
-      flex: 1 1 auto;
-      padding: 32px 32px 24px 32px;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 32px;
+    .stat-title { font-size: 0.95rem; color: var(--text-sub); }
+    .stat-value { font-size: 2rem; font-weight: 700; color: #fff; margin: 0; }
+    
+    /* 테이블 스타일 */
+    .content-box { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 24px; margin-top: 24px; }
+    .table { color: var(--text-main); margin-bottom: 0; }
+    .table th { background: var(--card-bg); color: var(--accent-color); border-bottom: 1px solid var(--border-color); border-top: none; }
+    .table td { border-bottom: 1px solid var(--border-color); vertical-align: middle; background: var(--card-bg); color: #fff; }
+    .table-hover tbody tr:hover td { background-color: #2a2a2a; }
+
+    /* 배지 및 버튼 */
+    .badge-soft { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .status-wait { background: rgba(22, 198, 12, 0.2); color: #16c60c; }
+    .status-done { background: rgba(189, 189, 189, 0.2); color: #bdbdbd; }
+    
+    .btn-primary-custom { background: var(--accent-color); color: #000; font-weight: 700; border: none; }
+    .btn-primary-custom:hover { background: #ffe066; color: #000; }
+
+    .input-interest { background: #333; border: 1px solid #444; color: #fff; width: 100%; padding: 4px; text-align: right; border-radius: 4px; }
+
+    /* 반응형 */
+    @media (max-width: 768px) {
+      .container-flex { flex-direction: column; }
+      .sidebar { width: 100%; padding: 10px 0; overflow-x: auto; display: none; } /* 모바일 사이드바 처리 필요 시 수정 */
+      .sidebar.open { display: block; }
+      .main { padding: 16px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
     }
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 24px;
-      margin-bottom: 32px;
-    }
-    .card {
-      background: #232323;
-      border-radius: 16px;
-      padding: 28px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      box-shadow: 0 2px 8px rgba(30,30,30,0.07);
-      border: 1px solid #292929;
-    }
-    .card-title {
-      font-size: 1.08rem;
-      font-weight: 700;
-      color: #FEE500;
-      margin-bottom: 6px;
-    }
-    .card-value {
-      font-size: 2.2rem;
-      font-weight: 700;
-      color: #fff;
-    }
-    .badge {
-      display: inline-block;
-      padding: 4px 14px;
-      border-radius: 14px;
-      background: #16c60c;
-      color: #fff;
-      font-size: 1rem;
-      font-weight: 700;
-      vertical-align: middle;
-    }
-    /* ====== 프로젝트 리스트(테이블) ====== */
-    .table-wrap {
-      background: #232323;
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(30,30,30,0.06);
-      border: 1px solid #292929;
-      overflow-x: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 600px;
-    }
-    th, td {
-      text-align: left;
-      padding: 14px 10px;
-    }
-    th {
-      color: #FEE500;
-      font-weight: 700;
-      border-bottom: 1.5px solid #292929;
-      background: #232323;
-    }
-    tr {
-      border-bottom: 1px solid #292929;
-    }
-    tr:last-child {
-      border-bottom: none;
-    }
-    .status-on {
-      color: #16c60c;
-      font-weight: 700;
-    }
-    .status-off {
-      color: #bdbdbd;
-      font-weight: 700;
-    }
-    .manage-btn {
-      background: #FEE500;
-      color: #232323;
-      font-weight: 700;
-      border-radius: 7px;
-      padding: 6px 16px;
-      border: none;
-      transition: background 0.15s;
-    }
-    .manage-btn:hover {
-      background: #ffe066;
-    }
-    /* ====== 반응형 ====== */
-    @media (max-width: 900px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-        gap: 18px;
-      }
-      .main {
-        padding: 20px 8px;
-        gap: 20px;
-      }
-    }
-    @media (max-width: 700px) {
-      .sidebar {
-        position: fixed;
-        top: 64px;
-        left: -240px;
-        width: 200px;
-        height: calc(100% - 64px);
-        z-index: 120;
-        background: #232323;
-        box-shadow: 2px 0 16px rgba(30,30,30,0.14);
-        transition: left 0.18s;
-        padding-top: 32px;
-      }
-      .sidebar.open {
-        left: 0;
-      }
-      .hamburger {
-        display: flex;
-      }
-      .container {
-        flex-direction: column;
-      }
-      .main {
-        padding: 20px 4vw;
-      }
-    }
-    @media (max-width: 450px) {
-      .header { padding: 10px 6px; }
-      .main { padding: 10px 2vw; }
-      .table-wrap { border-radius: 8px; }
-      .card { border-radius: 8px; padding: 18px 12px; }
-    }
+    
+    .hamburger { display: none; background: none; border: none; flex-direction: column; justify-content: center; gap: 5px; cursor: pointer; }
+    .hamburger span { width: 24px; height: 2px; background: var(--accent-color); }
+    @media (max-width: 768px) { .hamburger { display: flex; } }
   </style>
 </head>
 <body>
+
   <header class="header">
     <div class="profile-wrap">
-      <button class="hamburger" id="hamBtn" aria-label="메뉴 열기/닫기">
-        <span style="width: 24px;"></span>
-        <span style="width: 24px;"></span>
-        <span style="width: 24px;"></span>
-      </button>
+      <button class="hamburger" id="hamBtn"><span></span><span></span><span></span></button>
       <span class="profile-name">채권관리</span>
     </div>
-    <div class="clock" id="clock">00:00:00</div>
+    <div style="color: var(--accent-color); font-family: monospace;" id="clock">00:00:00</div>
   </header>
-  <div class="container">
+
+  <div class="container-flex">
     <nav class="sidebar" id="sidebar">
-      <ul class="sidebar-menu">
-        <li><a href="#" class="active">대시보드</a></li>
-        <li><a href="#">AI 모델 관리</a></li>
-        <li><a href="#">로그 분석</a></li>
-        <li><a href="#">설정</a></li>
+      <ul class="sidebar-menu" id="nav-menu">
+        <li><a data-tab="dashboard" class="active">📊 대시보드</a></li>
+        <li><a data-tab="list">📦 자산 관리</a></li>
+        <li><a data-tab="interest">💳 이자 수취</a></li>
+        <li><a data-tab="analytics">📈 수익 통계</a></li>
       </ul>
     </nav>
-    <main class="main">
-      <section class="dashboard-grid">
-        <div class="card">
-          <div class="card-title">현재 구동 중인 모델</div>
-          <div class="card-value">5개</div>
-        </div>
-        <div class="card">
-          <div class="card-title">오늘 API 호출 수</div>
-          <div class="card-value">12,500회</div>
-        </div>
-        <div class="card">
-          <div class="card-title">서버 헬스 체크</div>
-          <span class="badge">양호</span>
-        </div>
-      </section>
-      <section class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>서비스명</th>
-              <th>연결된 모델</th>
-              <th>상태</th>
-              <th>관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>카카오챗봇</td>
-              <td>Clova</td>
-              <td class="status-on">On</td>
-              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
-            </tr>
-            <tr>
-              <td>AI 상담 서비스</td>
-              <td>GPT</td>
-              <td class="status-on">On</td>
-              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
-            </tr>
-            <tr>
-              <td>음성비서</td>
-              <td>Kanana</td>
-              <td class="status-off">Off</td>
-              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
-            </tr>
-            <tr>
-              <td>이미지 분석</td>
-              <td>Clova</td>
-              <td class="status-on">On</td>
-              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
-            </tr>
-            <tr>
-              <td>텍스트 요약</td>
-              <td>GPT</td>
-              <td class="status-on">On</td>
-              <td><button class="manage-btn" onclick="alert('관리 페이지로 이동합니다.')">관리</button></td>
-            </tr>
-          </tbody>
-        </table>
-      </section>
-    </main>
+
+    <main class="main" id="render-area">
+      </main>
   </div>
+
+  <div class="modal fade" id="addBondModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h5 class="modal-title" style="color:var(--accent-color); font-weight:700;">새 채권 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <form id="add-bond-form">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label class="form-label text-secondary small">채권명</label>
+              <input name="name" required class="form-control" placeholder="예: 삼성전자 123">
+            </div>
+            <div class="row mb-3">
+              <div class="col">
+                <label class="form-label text-secondary small">계좌명</label>
+                <input name="account" required class="form-control">
+              </div>
+              <div class="col">
+                <label class="form-label text-secondary small">이율(%)</label>
+                <input name="rate" type="number" step="0.01" required class="form-control">
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col">
+                <label class="form-label text-secondary small">매수일</label>
+                <input name="buyDate" type="date" required class="form-control">
+              </div>
+              <div class="col">
+                <label class="form-label text-secondary small">만기일</label>
+                <input name="maturityDate" type="date" required class="form-control">
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label text-secondary small">매수금액(원)</label>
+              <input name="buyAmount" type="number" required class="form-control">
+            </div>
+          </div>
+          <div class="modal-footer border-0">
+            <button type="submit" class="btn btn-primary-custom w-100 py-2 rounded-3">등록 완료</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // ====== 실시간 시계 (초 단위 갱신) ======
-    function updateClock() {
-      const now = new Date();
-      const hh = String(now.getHours()).padStart(2, '0');
-      const mm = String(now.getMinutes()).padStart(2, '0');
-      const ss = String(now.getSeconds()).padStart(2, '0');
-      document.getElementById('clock').textContent = `${hh}:${mm}:${ss}`;
+    // ====== 시계 ======
+    setInterval(() => {
+      const n = new Date();
+      document.getElementById('clock').innerText = n.toTimeString().split(' ')[0];
+    }, 1000);
+
+    // ====== 사이드바 토글 (모바일) ======
+    document.getElementById('hamBtn').addEventListener('click', () => {
+      const sb = document.getElementById('sidebar');
+      sb.style.display = sb.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // ====== 데이터 및 상태 ======
+    let bonds = JSON.parse(localStorage.getItem('bond_manager_v5_data')) || [];
+    let activeTab = 'dashboard';
+    let selectedYear = new Date().getFullYear();
+    let currentChart = null;
+
+    const formatKRW = (v) => new Intl.NumberFormat('ko-KR').format(v) + '원';
+    const saveData = () => localStorage.setItem('bond_manager_v5_data', JSON.stringify(bonds));
+
+    // ====== 렌더링 함수 ======
+    function render() {
+      const area = document.getElementById('render-area');
+      area.innerHTML = '';
+      
+      // 탭 활성화 처리
+      document.querySelectorAll('.sidebar-menu a').forEach(a => {
+        a.classList.toggle('active', a.dataset.tab === activeTab);
+      });
+
+      if (activeTab === 'dashboard') renderDashboard(area);
+      else if (activeTab === 'list') renderList(area);
+      else if (activeTab === 'interest') renderInterest(area);
+      else if (activeTab === 'analytics') renderAnalytics(area);
     }
-    setInterval(updateClock, 1000);
-    updateClock();
 
-    // ====== 햄버거 메뉴 토글 (모바일) ======
-    const hamBtn = document.getElementById('hamBtn');
-    const sidebar = document.getElementById('sidebar');
-    hamBtn.addEventListener('click', function() {
-      sidebar.classList.toggle('open');
+    function renderDashboard(container) {
+      const activeBonds = bonds.filter(b => b.status === 'active');
+      const totalInv = activeBonds.reduce((a, c) => a + Number(c.buyAmount), 0);
+      let thisYearIncome = 0;
+      bonds.forEach(b => {
+        const yData = b.interests?.[new Date().getFullYear()];
+        if(yData) Object.values(yData).forEach(v => thisYearIncome += (Number(v)||0));
+      });
+
+      container.innerHTML = `
+        <h3 class="mb-4" style="font-weight:700;">안녕하세요 👋 <span style="font-size:0.9rem; color:var(--text-sub); font-weight:400;">오늘의 투자 현황입니다.</span></h3>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-title">현재 총 투자 원금</div>
+              <div class="stat-value" style="color:#FEE500;">${formatKRW(totalInv)}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-title">${new Date().getFullYear()}년 예상 이자</div>
+              <div class="stat-value">${formatKRW(thisYearIncome)}</div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="stat-card">
+              <div class="stat-title">운용 종목 수</div>
+              <div class="stat-value">${activeBonds.length} 개</div>
+            </div>
+          </div>
+        </div>
+        <div class="row mt-4">
+           <div class="col-lg-8">
+             <div class="content-box">
+               <h5 style="color:var(--accent-color); margin-bottom:20px;">자산 비중 (Top 5)</h5>
+               <canvas id="dashChart" height="100"></canvas>
+             </div>
+           </div>
+           <div class="col-lg-4">
+             <div class="content-box">
+               <h5 style="color:var(--accent-color); margin-bottom:20px;">최근 등록 자산</h5>
+               <table class="table table-hover table-borderless text-white">
+                 <thead><tr><th>자산명</th><th>상태</th></tr></thead>
+                 <tbody>
+                   ${bonds.slice(-4).reverse().map(b => `
+                     <tr>
+                       <td>${b.name}</td>
+                       <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
+                     </tr>
+                   `).join('')}
+                 </tbody>
+               </table>
+             </div>
+           </div>
+        </div>
+      `;
+      
+      const ctx = document.getElementById('dashChart').getContext('2d');
+      if(currentChart) currentChart.destroy();
+      currentChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: activeBonds.slice(0, 5).map(b => b.name),
+          datasets: [{ label: '투자금액', data: activeBonds.slice(0, 5).map(b => b.buyAmount), backgroundColor: '#FEE500', borderRadius: 4 }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { display: false } } }
+        }
+      });
+    }
+
+    function renderList(container) {
+      container.innerHTML = `
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 style="font-weight:700;">자산 관리</h3>
+          <button class="btn btn-primary-custom rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button>
+        </div>
+        <div class="content-box mt-0">
+          <div class="table-responsive">
+            <table class="table table-hover text-white">
+              <thead><tr><th>채권명</th><th>계좌</th><th>매수금액</th><th>이율</th><th>만기일</th><th>상태</th><th>관리</th></tr></thead>
+              <tbody>
+                ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-4 text-muted">데이터가 없습니다.</td></tr>' : 
+                  bonds.slice().reverse().map(b => `
+                  <tr>
+                    <td>${b.name}</td>
+                    <td class="text-secondary">${b.account}</td>
+                    <td>${formatKRW(b.buyAmount)}</td>
+                    <td style="color:#FEE500;">${b.rate}%</td>
+                    <td class="text-secondary">${b.maturityDate}</td>
+                    <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
+                    <td>
+                      <button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0">🗑️</button>
+                      ${b.status==='active' ? `<button onclick="toggleStatus(${b.id})" class="btn btn-sm btn-outline-success border-0">✔️</button>` : ''}
+                    </td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderInterest(container) {
+      container.innerHTML = `
+        <h3 class="mb-4" style="font-weight:700;">이자 수취 관리</h3>
+        <div class="content-box mt-0">
+          <div class="mb-3">
+             <select onchange="changeYear(this.value)" class="form-select w-auto bg-dark text-white border-secondary">
+               ${[2024, 2025, 2026, 2027, 2028].map(y => `<option value="${y}" ${selectedYear==y?'selected':''}>${y}년</option>`).join('')}
+             </select>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-bordered text-center text-white" style="border-color:#333;">
+              <thead>
+                <tr>
+                  <th class="text-start">자산명</th>
+                  <th>합계</th>
+                  ${Array.from({length:12}, (_,i)=>`<th>${i+1}월</th>`).join('')}
+                </tr>
+              </thead>
+              <tbody>
+                ${bonds.map(b => {
+                  const yData = b.interests?.[selectedYear] || {};
+                  const rowTotal = Object.values(yData).reduce((a,v)=>a+(Number(v)||0), 0);
+                  return `
+                    <tr>
+                      <td class="text-start">${b.name}</td>
+                      <td style="color:#FEE500;">${rowTotal.toLocaleString()}</td>
+                      ${Array.from({length:12}, (_,i)=>`
+                        <td><input type="number" value="${yData[i+1]||''}" onchange="updateInterest(${b.id}, ${selectedYear}, ${i+1}, this.value)" class="input-interest"></td>
+                      `).join('')}
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderAnalytics(container) {
+      const totalLife = bonds.reduce((a, c) => a + Number(c.buyAmount), 0);
+      let totalProfit = 0;
+      bonds.forEach(b => Object.values(b.interests || {}).forEach(y => Object.values(y).forEach(v => totalProfit += (Number(v)||0))));
+      const monthlyData = Array(12).fill(0).map((_, i) => {
+        let sum = 0;
+        bonds.forEach(b => sum += (Number(b.interests?.[selectedYear]?.[i+1]) || 0));
+        return sum;
+      });
+
+      container.innerHTML = `
+        <h3 class="mb-4" style="font-weight:700;">수익 통계</h3>
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="stat-card">
+              <div class="stat-title">누적 총 투자액</div>
+              <div class="stat-value">${formatKRW(totalLife)}</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="stat-card">
+              <div class="stat-title">누적 이자 수익</div>
+              <div class="stat-value" style="color:#16c60c;">+${formatKRW(totalProfit)}</div>
+            </div>
+          </div>
+        </div>
+        <div class="content-box">
+          <h5 style="color:var(--accent-color);">${selectedYear}년 월별 수익 추이</h5>
+          <canvas id="anaChart" height="100"></canvas>
+        </div>
+      `;
+      
+      const ctx = document.getElementById('anaChart').getContext('2d');
+      if(currentChart) currentChart.destroy();
+      currentChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: Array.from({length:12}, (_,i)=>`${i+1}월`),
+          datasets: [{
+            label: '월별 수익', data: monthlyData, borderColor: '#FEE500', backgroundColor: 'rgba(254, 229, 0, 0.1)',
+            fill: true, tension: 0.4
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, grid: { color: '#333' } }, x: { grid: { color: '#333' } } }
+        }
+      });
+    }
+
+    // ====== 이벤트 핸들러 ======
+    document.getElementById('nav-menu').addEventListener('click', (e) => {
+      const target = e.target.closest('a'); // a 태그 감지
+      if (target && target.dataset.tab) {
+        activeTab = target.dataset.tab;
+        render();
+      }
     });
 
-    // ====== 화면 크기 변경 시 사이드바 자동 닫기 (PC화면 복귀시) ======
-    window.addEventListener('resize', function() {
-      if(window.innerWidth > 700) sidebar.classList.remove('open');
-    });
+    document.getElementById('add-bond-form').onsubmit = (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      bonds.push({
+        id: Date.now(),
+        name: fd.get('name'), account: fd.get('account'),
+        buyDate: fd.get('buyDate'), maturityDate: fd.get('maturityDate'),
+        rate: fd.get('rate'), buyAmount: Number(fd.get('buyAmount')),
+        status: 'active', interests: {}
+      });
+      saveData();
+      bootstrap.Modal.getInstance(document.getElementById('addBondModal')).hide();
+      e.target.reset();
+      render();
+    };
+
+    window.toggleStatus = (id) => {
+      bonds = bonds.map(b => b.id === id ? {...b, status: 'completed'} : b);
+      saveData(); render();
+    };
+    window.deleteBond = (id) => {
+      if(confirm('삭제하시겠습니까?')) { bonds = bonds.filter(b => b.id !== id); saveData(); render(); }
+    };
+    window.updateInterest = (id, y, m, v) => {
+      bonds = bonds.map(b => {
+        if(b.id === id) {
+          if(!b.interests) b.interests = {};
+          if(!b.interests[y]) b.interests[y] = {};
+          b.interests[y][m] = v;
+        }
+        return b;
+      });
+      saveData(); render();
+    };
+    window.changeYear = (v) => { selectedYear = v; render(); };
+
+    // 초기 렌더링
+    render();
   </script>
 </body>
 </html>
