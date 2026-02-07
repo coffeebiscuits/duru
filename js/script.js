@@ -369,9 +369,9 @@ function renderList(container, bonds) {
     <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">채권 관리</h3>
     <button class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 채권 등록</button></div>
     <div class="content-box mt-0"><div class="table-responsive"><table class="table table-hover">
-    <thead><tr><th>채권명</th><th>계좌</th><th>수량</th><th>매수금액</th><th>이율</th><th>만기일</th><th>상태/손익</th><th>관리</th></tr></thead>
+    <thead><tr><th>채권명</th><th>계좌</th><th>매수일</th><th>만기일</th><th>이율</th><th>수량</th><th>매수금액</th><th>상태/손익</th><th>관리</th></tr></thead>
     <tbody>
-    ${bonds.length === 0 ? '<tr><td colspan="8" class="text-center py-5 text-muted">데이터가 없습니다.</td></tr>' : 
+    ${bonds.length === 0 ? '<tr><td colspan="9" class="text-center py-5 text-muted">데이터가 없습니다.</td></tr>' : 
       bonds.slice().reverse().map(b => {
         let statusBadge = `<span class="badge-soft status-wait">보유중</span>`, profitText = '';
         if(b.status === 'completed') {
@@ -379,15 +379,22 @@ function renderList(container, bonds) {
           const diff = (b.redemptionAmount || b.buyAmount) - b.buyAmount;
           profitText = diff > 0 ? `<div class="profit-plus mt-1">+${formatKRW(diff)}</div>` : (diff < 0 ? `<div class="profit-minus mt-1">${formatKRW(diff)}</div>` : `<div class="text-secondary small mt-1">원금상환</div>`);
         }
+        
         return `<tr>
             <td class="fw-bold text-primary text-decoration-underline" style="cursor:pointer;" onclick="openEditModal(${b.id})">${b.name}</td>
             <td class="text-secondary small">${b.account}</td>
+            <td class="text-secondary small">${b.buyDate}</td>
+            <td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td>
             <td class="text-dark">${b.quantity ? Number(b.quantity).toLocaleString() : 0}</td>
             <td class="fw-bold text-dark">${formatKRW(b.buyAmount)}</td>
-            <td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td>
             <td class="text-secondary small">${b.maturityDate}</td>
             <td>${statusBadge}${profitText}</td>
-            <td>${b.status==='active' ? `<button onclick="toggleStatus(${b.id}, '${b.name}', ${b.buyAmount})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1">✔️</button>` : ''}</td>
+            <td>
+                ${b.status === 'active' 
+                  ? `<button onclick="toggleStatus(${b.id}, '${b.name}', ${b.buyAmount})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1" title="만기 처리">✔️</button>` 
+                  : `<button onclick="revertStatus(${b.id}, '${b.name}')" class="btn btn-sm btn-outline-warning border-0 rounded-circle ms-1" title="상태 되돌리기">🔄</button>`
+                }
+            </td>
         </tr>`;
       }).join('')}
     </tbody></table></div></div>
@@ -491,5 +498,14 @@ window.openEditModal = (id) => {
     if(editModal && typeof bootstrap !== 'undefined') new bootstrap.Modal(editModal).show();
   }
   stmt.free();
+};
+
+
+window.revertStatus = (id, name) => {
+  if (confirm(`'${name}' 채권을 다시 '보유중' 상태로 되돌리시겠습니까?`)) {
+    // status를 active로, 상환금액을 0으로 초기화
+    runQuery("UPDATE bonds SET status = 'active', redemptionAmount = 0 WHERE id = ?", [id]);
+    render();
+  }
 };
 
