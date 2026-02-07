@@ -38,60 +38,70 @@ window.onload = async () => {
 // ====== [2] 이벤트 리스너 통합 바인딩 ======
 function bindAllEvents() {
   
-  // (1) [완벽 수정] 새 파일 만들기: 빈 DB 생성 -> 즉시 파일로 저장 -> 연결 끊기
+  // (1) [최종 수정] 새 파일 만들기: 생성 -> 저장 -> 메모리 삭제(db=null) -> 초기화면 유지
   const btnNew = document.getElementById('btn-new-db');
   if (btnNew) {
     btnNew.onclick = async () => {
-      if (!confirm("새 DB 파일을 생성하시겠습니까?\n(확인 시 저장 위치를 묻는 창이 뜹니다)")) return;
+      if (!confirm("새 DB 파일을 생성하시겠습니까?\n(생성 후 파일만 저장되며, 자동으로 열리지 않습니다)")) return;
 
-      // 1. 메모리에 빈 DB 생성
+      // 1. 저장용 임시 DB 생성
       db = new SQL.Database();
       createTables();
       
       try {
         const data = db.export();
 
-        // 2. 즉시 파일 저장 (생성)
+        // 2. 파일 저장 (생성)
+        let saved = false;
         if (window.showSaveFilePicker) {
-            // 저장 위치 지정
-            const newHandle = await window.showSaveFilePicker({
-              suggestedName: 'my_bonds.db',
-              types: [{ description: 'SQLite DB', accept: { 'application/x-sqlite3': ['.db'] } }]
-            });
-            
-            // 데이터 쓰기
-            const writable = await newHandle.createWritable();
-            await writable.write(data);
-            await writable.close();
-            
-            // ★ 핵심: 저장했으면 끝. 연결하지 않음. (사용자가 알아서 열기 전까지는 null)
-            fileHandle = null; 
-            
-            alert("✅ 새 파일이 정상적으로 저장되었습니다.\n편집하려면 [파일 열기] 버튼으로 불러오세요.");
-            document.getElementById('db-filename').innerText = "파일 저장됨 (편집하려면 열기 필요)";
+            try {
+                const newHandle = await window.showSaveFilePicker({
+                    suggestedName: 'my_bonds.db',
+                    types: [{ description: 'SQLite DB', accept: { 'application/x-sqlite3': ['.db'] } }]
+                });
+                const writable = await newHandle.createWritable();
+                await writable.write(data);
+                await writable.close();
+                saved = true;
+            } catch(e) {
+                // 취소 시 아무것도 안 함
+                if (e.name !== 'AbortError') alert(e);
+                db = null; // 취소했어도 임시 DB는 날림
+                return; 
+            }
         } else {
-            // 구형 브라우저 (다운로드 방식)
+            // 구형 브라우저 다운로드
             const blob = new Blob([data], { type: 'application/x-sqlite3' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'my_bonds.db';
             a.click();
-            
-            fileHandle = null;
-            alert("✅ 새 파일이 다운로드 폴더에 저장되었습니다.\n편집하려면 [파일 열기] 버튼으로 불러오세요.");
+            saved = true;
         }
 
-        // 모달 닫기 및 화면 초기화 (빈 화면 보여주기)
-        closeModal('entryModal');
-        render();
+        if(saved) {
+            // ★★★ 핵심 수정: 저장 끝났으니 메모리에서 DB 즉시 삭제 ★★★
+            db = null; 
+            fileHandle = null;
+
+            // UI 피드백
+            alert("✅ 새 파일이 저장되었습니다.\n작업을 시작하려면 [파일 열기] 버튼을 눌러주세요.");
+            
+            // 파일명 표시 초기화
+            document.getElementById('db-filename').innerText = "파일 없음";
+            
+            // ★ 중요: 모달 닫지 않음 (closeModal 삭제함). 초기 화면 유지.
+            render(); // db가 null이므로 빈 화면이 됨
+        }
 
       } catch (err) {
-        if (err.name !== 'AbortError') alert('파일 생성 중 오류 발생: ' + err);
+        alert('오류 발생: ' + err);
+        db = null; // 에러나도 초기화
       }
     };
   }
 
-  // (2) 파일 열기 버튼들 (이때만 fileHandle 연결)
+  // (2) 파일 열기 버튼들 (사용자가 직접 눌렀을 때만 로드)
   const openAction = async () => {
     if (window.showOpenFilePicker) {
       try {
@@ -103,9 +113,8 @@ function bindAllEvents() {
         const arrayBuffer = await file.arrayBuffer();
         db = new SQL.Database(new Uint8Array(arrayBuffer));
         
-        // ★ 여기서만 핸들 연결 유지
-        document.getElementById('db-filename').innerText = fileHandle.name + " (편집 중)";
-        closeModal('entryModal');
+        document.getElementById('db-filename').innerText = fileHandle.name + " (편집 모드)";
+        closeModal('entryModal'); // 이때만 모달 닫힘
         render();
       } catch (err) {
         if (err.name !== 'AbortError') alert('파일 열기 실패: ' + err);
@@ -136,7 +145,7 @@ function bindAllEvents() {
       const reader = new FileReader();
       reader.onload = () => {
         db = new SQL.Database(new Uint8Array(reader.result));
-        fileHandle = null; // Input 방식은 저장 위치 모르므로 핸들 없음
+        fileHandle = null;
         document.getElementById('db-filename').innerText = file.name + " (읽기 전용)";
         closeModal('entryModal');
         render();
@@ -199,7 +208,7 @@ function bindAllEvents() {
 // ====== [3] 저장 로직 (수동 저장) ======
 async function saveCurrentDb(showMsg = true) {
   if (!db) {
-    if (showMsg) alert("❌ 저장할 데이터가 없습니다.");
+    if (showMsg) alert("❌ 저장할 데이터가 없습니다. 파일을 열어주세요.");
     return;
   }
 
@@ -216,13 +225,12 @@ async function saveCurrentDb(showMsg = true) {
       const writable = await fileHandle.createWritable();
       await writable.write(data);
       await writable.close();
-      if (showMsg) alert("✅ [덮어쓰기 완료] 현재 파일에 저장되었습니다.");
+      if (showMsg) alert("✅ [덮어쓰기 완료] 저장되었습니다.");
     } 
-    // Case B: 핸들이 없는 경우 (새로 저장/다운로드)
+    // Case B: 핸들이 없는 경우 (다른 이름으로 저장)
     else {
-      // 새 파일 버튼으로 만들고 '열기' 안 한 상태에서 데이터 입력 후 저장 누른 경우 등
       if (window.showSaveFilePicker) {
-         if(showMsg && !confirm("현재 연결된 파일이 없습니다.\n새 파일로 저장하시겠습니까?")) return;
+         if(showMsg && !confirm("연결된 파일이 없습니다. 새 파일로 저장하시겠습니까?")) return;
          
          const newHandle = await window.showSaveFilePicker({
            suggestedName: 'my_bonds_save.db',
@@ -231,11 +239,6 @@ async function saveCurrentDb(showMsg = true) {
          const writable = await newHandle.createWritable();
          await writable.write(data);
          await writable.close();
-         
-         // ★ 여기서도 사용자가 원치 않는 자동 연결은 하지 않음. (명시적 열기 전까진 핸들 null 유지)
-         // 하지만 '저장' 버튼을 누른 맥락상, 이제부터 이 파일에 계속 저장하고 싶을 수 있으나
-         // 님 말씀대로 '알아서 불러올게'를 철칙으로 지키려면 여기서도 연결 안 하는게 맞음.
-         // (혹시 몰라 연결은 안하고 저장만 수행합니다)
          
          if (showMsg) alert("✅ 새 파일로 저장되었습니다.");
       } else {
@@ -305,10 +308,16 @@ function getBonds() {
   });
 }
 
-// ====== [5] 렌더링 로직 ======
+// ====== [5] 렌더링 로직 (DB 없으면 그리지 않음) ======
 function render() {
   const area = document.getElementById('render-area');
   if (!area) return; 
+
+  // ★ 중요: DB가 없으면 렌더링 영역을 비움 (혹은 모달 뒤에 빈 화면)
+  if (!db) {
+      area.innerHTML = '';
+      return;
+  }
 
   area.innerHTML = '';
   document.querySelectorAll('.sidebar-menu a').forEach(a => {
