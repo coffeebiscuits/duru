@@ -136,7 +136,7 @@ function bindAllEvents() {
         // 하지만 저장 버튼 누르면 핸들을 딸 것임.
         fileHandle = null; 
         
-        document.getElementById('db-filename').innerText = file.name + " (편집 중)";
+        document.getElementById('db-filename').innerText = file.name;
         closeModal('entryModal');
         render();
         
