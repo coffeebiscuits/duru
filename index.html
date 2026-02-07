@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>통합 어드민 대시보드</title>
-  <!-- 카카오 스타일 폰트 적용 (Spoqa Han Sans Neo) -->
+  <title>채권 관리 시스템</title>
   <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;700&display=swap" rel="stylesheet">
   <style>
     /* ====== 기본 스타일 및 다크모드 ====== */
@@ -45,16 +44,10 @@
       align-items: center;
       gap: 12px;
     }
-    .profile-img {
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #FEE500;
-      background: #333;
-    }
     .profile-name {
       font-size: 1.1rem;
       font-weight: 700;
+      color: #FEE500; /* 서비스명 강조를 위해 카카오 옐로우 적용 */
     }
     .clock {
       font-family: 'Spoqa Han Sans Neo', monospace;
@@ -254,7 +247,6 @@
       }
     }
     @media (max-width: 450px) {
-      .profile-name { display: none; }
       .header { padding: 10px 6px; }
       .main { padding: 10px 2vw; }
       .table-wrap { border-radius: 8px; }
@@ -263,21 +255,18 @@
   </style>
 </head>
 <body>
-  <!-- ====== 상단 헤더 ====== -->
   <header class="header">
     <div class="profile-wrap">
       <button class="hamburger" id="hamBtn" aria-label="메뉴 열기/닫기">
-        <!-- 햄버거 아이콘 (3줄) -->
         <span style="width: 24px;"></span>
         <span style="width: 24px;"></span>
         <span style="width: 24px;"></span>
       </button>
+      <span class="profile-name">채권관리</span>
     </div>
     <div class="clock" id="clock">00:00:00</div>
   </header>
-  <!-- ====== 본문 레이아웃 ====== -->
   <div class="container">
-    <!-- ====== 좌측 메뉴 ====== -->
     <nav class="sidebar" id="sidebar">
       <ul class="sidebar-menu">
         <li><a href="#" class="active">대시보드</a></li>
@@ -286,27 +275,21 @@
         <li><a href="#">설정</a></li>
       </ul>
     </nav>
-    <!-- ====== 메인 현황판 및 테이블 ====== -->
     <main class="main">
-      <!-- 현황 카드 그리드 -->
       <section class="dashboard-grid">
-        <!-- 카드1: 구동 중인 모델 -->
         <div class="card">
           <div class="card-title">현재 구동 중인 모델</div>
           <div class="card-value">5개</div>
         </div>
-        <!-- 카드2: 오늘 API 호출 수 -->
         <div class="card">
           <div class="card-title">오늘 API 호출 수</div>
           <div class="card-value">12,500회</div>
         </div>
-        <!-- 카드3: 서버 헬스 체크 -->
         <div class="card">
           <div class="card-title">서버 헬스 체크</div>
           <span class="badge">양호</span>
         </div>
       </section>
-      <!-- 프로젝트 리스트 테이블 -->
       <section class="table-wrap">
         <table>
           <thead>
@@ -353,7 +336,6 @@
       </section>
     </main>
   </div>
-  <!-- ====== JS: 시계, 햄버거 메뉴, 반응형 ====== -->
   <script>
     // ====== 실시간 시계 (초 단위 갱신) ======
     function updateClock() {
@@ -378,14 +360,5 @@
       if(window.innerWidth > 700) sidebar.classList.remove('open');
     });
   </script>
-  <!--
-    [주요 역할별 주석]
-    - .header: 상단 헤더(프로필, 시계)
-    - .sidebar: 좌측 메뉴 (PC 고정, 모바일 토글)
-    - .main: 메인 영역(카드, 테이블)
-    - .dashboard-grid: 현황 카드 Grid
-    - .table-wrap: 서비스 리스트 테이블
-    - JS: 실시간 시계, 햄버거 메뉴, 반응형 처리
-  -->
 </body>
 </html>
