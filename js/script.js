@@ -125,7 +125,7 @@ async function saveCurrentDb(showMsg = true) {
       const blob = new Blob([data], { type: 'application/x-sqlite3' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'my_bonds_autosave.db';
+      a.download = 'my_bonds.db';
       a.click();
       if(showMsg) alert("파일이 다운로드 폴더에 저장되었습니다.");
     }
@@ -135,10 +135,9 @@ async function saveCurrentDb(showMsg = true) {
   }
 }
 
-// ====== [변경] DB Mutation Helper (자동 저장 제거됨) ======
+// ====== DB Mutation Helper ======
 function runQuery(sql, params = []) {
   db.run(sql, params);
-  // autoSave() 호출 제거됨 -> 이제 데이터만 변경되고 저장은 안 됨
   render(); // 화면만 갱신
 }
 
