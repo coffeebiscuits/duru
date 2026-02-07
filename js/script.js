@@ -1,76 +1,123 @@
 // ====== 전역 변수 ======
-let db = null; // SQLite DB 객체
-let SQL = null; // sql.js 모듈
+let db = null;
+let SQL = null;
+let fileHandle = null; // 파일 핸들 (자동 저장용)
 let activeTab = 'dashboard';
 let selectedYear = new Date().getFullYear();
 let currentChart = null;
 
 const formatKRW = (v) => new Intl.NumberFormat('ko-KR').format(v) + '원';
 
-// ====== 초기화 및 진입점 ======
+// ====== 초기화 ======
 window.onload = async () => {
-  // 1. sql.js 로드 (WASM 파일 경로 주의)
   const config = { locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}` };
   SQL = await initSqlJs(config);
-
-  // 2. 진입 모달 띄우기 (강제)
-  const entryModal = new bootstrap.Modal(document.getElementById('entryModal'));
-  entryModal.show();
   
-  // 시계
+  new bootstrap.Modal(document.getElementById('entryModal')).show();
+  
   setInterval(() => {
     document.getElementById('clock').innerText = new Date().toTimeString().split(' ')[0];
   }, 1000);
 };
 
-// ====== [1] 신규 DB 생성 (New User) ======
-document.getElementById('btn-new-db').addEventListener('click', () => {
-  db = new SQL.Database(); // 메모리에 새 DB 생성
-  createTables(); // 테이블 생성
+// ====== [1] 새 파일 만들기 (New) ======
+document.getElementById('btn-new-db').addEventListener('click', async () => {
+  db = new SQL.Database();
+  createTables();
   
-  // 즉시 다운로드 제공
-  saveDbToFile('my_bonds_init.db');
-  
-  // 모달 닫기 및 화면 진입
-  bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
-  document.getElementById('saveDbBtn').style.display = 'block'; // 저장 버튼 표시
-  render();
+  try {
+    // 저장할 파일 위치를 먼저 지정받음 (핸들 확보)
+    if (window.showSaveFilePicker) {
+      fileHandle = await window.showSaveFilePicker({
+        suggestedName: 'my_bonds.db',
+        types: [{ description: 'SQLite DB', accept: {'application/x-sqlite3': ['.db']} }]
+      });
+      await autoSave(); // 빈 파일 최초 저장
+    }
+    bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
+    render();
+  } catch (err) {
+    if(err.name !== 'AbortError') alert('파일 생성 중 오류: ' + err);
+  }
 });
 
-// ====== [2] 기존 DB 파일 불러오기 (Existing User) ======
+// ====== [2] 파일 열기 (Open & Auto-Sync) ======
+document.getElementById('btn-open-db').addEventListener('click', async () => {
+  if (window.showOpenFilePicker) {
+    // Modern Browser (PC Chrome/Edge): 직접 열기 및 핸들 확보
+    try {
+      [fileHandle] = await window.showOpenFilePicker({
+        types: [{ description: 'SQLite DB', accept: {'application/x-sqlite3': ['.db']} }]
+      });
+      const file = await fileHandle.getFile();
+      const arrayBuffer = await file.arrayBuffer();
+      db = new SQL.Database(new Uint8Array(arrayBuffer));
+      
+      bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
+      render();
+    } catch (err) {
+      if(err.name !== 'AbortError') alert('파일 열기 실패: ' + err);
+    }
+  } else {
+    // Fallback (Mobile/Safari): 기존 input 방식
+    document.getElementById('dbInput').click();
+  }
+});
+
+// Fallback Input Change Handler
 document.getElementById('dbInput').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
-
   const reader = new FileReader();
   reader.onload = () => {
-    const uInt8Array = new Uint8Array(reader.result);
-    try {
-      db = new SQL.Database(uInt8Array); // 파일 내용으로 DB 로드
-      bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
-      document.getElementById('saveDbBtn').style.display = 'block'; // 저장 버튼 표시
-      render();
-    } catch(err) {
-      alert('DB 파일을 여는 중 오류가 발생했습니다.\n' + err);
-    }
+    db = new SQL.Database(new Uint8Array(reader.result));
+    bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
+    render();
   };
   reader.readAsArrayBuffer(file);
 });
 
-// ====== [3] DB 파일 저장 (Download) ======
-window.saveDbToFile = (filename = `bond_manager_${new Date().toISOString().slice(0,10)}.db`) => {
-  if(!db) return;
-  const data = db.export();
-  const blob = new Blob([data], { type: 'application/x-sqlite3' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-};
+// ====== [핵심] 자동 저장 로직 ======
+async function autoSave() {
+  if (!db) return;
+  const data = db.export(); // Binary Data
 
-document.getElementById('saveDbBtn').addEventListener('click', () => saveDbToFile());
+  const statusEl = document.getElementById('saveStatus');
+  statusEl.innerText = '저장 중...';
+  statusEl.className = 'badge rounded-pill text-bg-warning border fw-normal';
 
-// ====== 테이블 스키마 정의 ======
+  try {
+    if (fileHandle) {
+      // 1. 핸들이 있으면 해당 파일에 덮어쓰기
+      const writable = await fileHandle.createWritable();
+      await writable.write(data);
+      await writable.close();
+    } else {
+      // 2. 핸들이 없으면(모바일 등) 다운로드 트리거 (어쩔 수 없음)
+      // 사용자 경험을 위해 매번 다운로드보다는, 변경 시 알림을 주거나 필요 시 다운로드하도록 유도할 수 있음.
+      // 여기서는 지시대로 '즉시 저장'을 위해 다운로드 실행
+      const blob = new Blob([data], { type: 'application/x-sqlite3' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'my_bonds_autosave.db';
+      a.click();
+    }
+    statusEl.innerText = '저장됨';
+    statusEl.className = 'badge rounded-pill text-bg-success border fw-normal';
+  } catch (err) {
+    console.error(err);
+    statusEl.innerText = '저장 실패';
+    statusEl.className = 'badge rounded-pill text-bg-danger border fw-normal';
+  }
+}
+
+// ====== DB Mutation Helper (변경 발생 시 자동 저장) ======
+function runQuery(sql, params = []) {
+  db.run(sql, params);
+  autoSave(); // 쿼리 실행 후 즉시 저장
+}
+
+// ====== 테이블 스키마 ======
 function createTables() {
   db.run(`CREATE TABLE IF NOT EXISTS bonds (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -83,7 +130,7 @@ function createTables() {
   );`);
 }
 
-// ====== 데이터 조회 Helper ======
+// ====== 데이터 조회 ======
 function getBonds() {
   if (!db) return [];
   const stmt = db.prepare("SELECT * FROM bonds");
@@ -105,24 +152,22 @@ function getBonds() {
   });
 }
 
-// ====== 렌더링 함수 (기존 로직 + DB 데이터 연결) ======
+// ====== 렌더링 (기존 로직 동일) ======
 function render() {
   const area = document.getElementById('render-area');
   area.innerHTML = '';
-  
   document.querySelectorAll('.sidebar-menu a').forEach(a => {
     a.classList.toggle('active', a.dataset.tab === activeTab);
   });
 
   const bonds = getBonds();
-
   if (activeTab === 'dashboard') renderDashboard(area, bonds);
   else if (activeTab === 'list') renderList(area, bonds);
   else if (activeTab === 'interest') renderInterest(area, bonds);
   else if (activeTab === 'analytics') renderAnalytics(area, bonds);
 }
 
-// --- 각 탭별 렌더링 (단순 표시용 함수들) ---
+// --- 탭별 렌더러 ---
 function renderDashboard(container, bonds) {
   const activeBonds = bonds.filter(b => b.status === 'active');
   const totalInv = activeBonds.reduce((a, c) => a + c.buyAmount, 0);
@@ -203,23 +248,23 @@ function renderAnalytics(container, bonds) {
   currentChart = new Chart(ctx, { type: 'line', data: { labels: Array.from({length:12}, (_,i)=>`${i+1}월`), datasets: [{ label: '월별 수익', data: monthlyData, borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.1)', fill: true, tension: 0.4 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { color: '#f1f5f9' } } } } });
 }
 
-// ====== 이벤트 핸들러 (UI Interaction) ======
+// ====== 이벤트 핸들러 & Auto Save 적용 ======
+
 document.getElementById('nav-menu').addEventListener('click', (e) => {
   const target = e.target.closest('a');
   if (target && target.dataset.tab) { activeTab = target.dataset.tab; render(); }
 });
 
-// 사이드바 모바일 토글
 document.getElementById('hamBtn').addEventListener('click', () => {
   const sb = document.getElementById('sidebar');
   sb.style.display = sb.style.display === 'block' ? 'none' : 'block';
 });
 
-// 채권 추가 (SQL Insert)
+// [변경점] db.run 대신 runQuery(자동저장) 사용
 document.getElementById('add-bond-form').onsubmit = (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  db.run(`INSERT INTO bonds (name, account, buyDate, maturityDate, rate, buyAmount) VALUES (?, ?, ?, ?, ?, ?)`, 
+  runQuery(`INSERT INTO bonds (name, account, buyDate, maturityDate, rate, buyAmount) VALUES (?, ?, ?, ?, ?, ?)`, 
     [fd.get('name'), fd.get('account'), fd.get('buyDate'), fd.get('maturityDate'), fd.get('rate'), Number(fd.get('buyAmount'))]);
   
   bootstrap.Modal.getInstance(document.getElementById('addBondModal')).hide();
@@ -229,8 +274,9 @@ document.getElementById('add-bond-form').onsubmit = (e) => {
 
 window.deleteBond = (id) => {
   if(confirm('삭제하시겠습니까?')) { 
-    db.run("DELETE FROM bonds WHERE id = ?", [id]);
-    db.run("DELETE FROM interests WHERE bond_id = ?", [id]);
+    // 트랜잭션 개념 대신 순차 실행
+    runQuery("DELETE FROM bonds WHERE id = ?", [id]);
+    runQuery("DELETE FROM interests WHERE bond_id = ?", [id]);
     render(); 
   }
 };
@@ -239,15 +285,15 @@ window.toggleStatus = (id, name, buyAmt) => {
   const inputVal = prompt(`'${name}' 채권의 만기(상환) 금액을 입력하세요.\n(입력 미시 매수금액과 동일)`, buyAmt);
   if (inputVal !== null) {
     const finalAmt = inputVal.trim() === '' ? buyAmt : Number(inputVal);
-    db.run("UPDATE bonds SET status = 'completed', redemptionAmount = ? WHERE id = ?", [finalAmt, id]);
+    runQuery("UPDATE bonds SET status = 'completed', redemptionAmount = ? WHERE id = ?", [finalAmt, id]);
     render();
   }
 };
 
 window.updateInterest = (id, y, m, v) => {
-  db.run(`INSERT INTO interests (bond_id, year, month, amount) VALUES (?, ?, ?, ?) 
+  runQuery(`INSERT INTO interests (bond_id, year, month, amount) VALUES (?, ?, ?, ?) 
           ON CONFLICT(bond_id, year, month) DO UPDATE SET amount = ?`, [id, y, m, v, v]);
-  render();
+  render(); // 이자 수정은 잦으므로 렌더링 최적화 고려 가능하나 여기선 즉시 반영
 };
 
 window.changeYear = (v) => { selectedYear = v; render(); };
