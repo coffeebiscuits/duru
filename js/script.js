@@ -1,7 +1,7 @@
 // ====== [0] 전역 변수 및 설정 ======
 let db = null;
 let SQL = null;
-let fileHandle = null; // ★ 파일 핸들 (열기 버튼으로 명시적으로 열었을 때만 유지)
+let fileHandle = null; // ★ 파일 핸들 (저장 위치 기억)
 let activeTab = 'dashboard';
 let selectedYear = new Date().getFullYear();
 let currentChart = null;
@@ -10,7 +10,6 @@ const formatKRW = (v) => new Intl.NumberFormat('ko-KR').format(v) + '원';
 
 // ====== [1] 메인 실행 (페이지 로드 후 작동) ======
 window.onload = async () => {
-  // 1-1. SQL.js 로드
   const config = { locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${filename}` };
   try {
     if (typeof initSqlJs === 'undefined') throw new Error("SQL.js 로드 실패");
@@ -21,38 +20,34 @@ window.onload = async () => {
     return;
   }
 
-  // 1-2. 초기 모달 띄우기
   const entryModal = document.getElementById('entryModal');
   if (entryModal && typeof bootstrap !== 'undefined') new bootstrap.Modal(entryModal).show();
 
-  // 1-3. 시계 동작
   setInterval(() => {
     const clock = document.getElementById('clock');
     if (clock) clock.innerText = new Date().toTimeString().split(' ')[0];
   }, 1000);
 
-  // 1-4. 이벤트 리스너 등록
   bindAllEvents();
 };
 
 // ====== [2] 이벤트 리스너 통합 바인딩 ======
 function bindAllEvents() {
   
-  // (1) [최종 수정] 새 파일 만들기: 생성 -> 저장 -> 메모리 삭제(db=null) -> 초기화면 유지
+  // (1) 새 파일 만들기 (생성 -> 저장 -> 초기화)
   const btnNew = document.getElementById('btn-new-db');
   if (btnNew) {
     btnNew.onclick = async () => {
       if (!confirm("새 DB 파일을 생성하시겠습니까?\n(생성 후 파일만 저장되며, 자동으로 열리지 않습니다)")) return;
 
-      // 1. 저장용 임시 DB 생성
       db = new SQL.Database();
       createTables();
       
       try {
         const data = db.export();
-
-        // 2. 파일 저장 (생성)
         let saved = false;
+
+        // 저장 시도
         if (window.showSaveFilePicker) {
             try {
                 const newHandle = await window.showSaveFilePicker({
@@ -64,13 +59,9 @@ function bindAllEvents() {
                 await writable.close();
                 saved = true;
             } catch(e) {
-                // 취소 시 아무것도 안 함
                 if (e.name !== 'AbortError') alert(e);
-                db = null; // 취소했어도 임시 DB는 날림
-                return; 
             }
         } else {
-            // 구형 브라우저 다운로드
             const blob = new Blob([data], { type: 'application/x-sqlite3' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
@@ -79,29 +70,24 @@ function bindAllEvents() {
             saved = true;
         }
 
+        // 저장 성공 여부와 관계없이, 새 파일 로직은 여기서 끝 (메모리 비움)
+        db = null; 
+        fileHandle = null;
+        
         if(saved) {
-            // ★★★ 핵심 수정: 저장 끝났으니 메모리에서 DB 즉시 삭제 ★★★
-            db = null; 
-            fileHandle = null;
-
-            // UI 피드백
             alert("✅ 새 파일이 저장되었습니다.\n작업을 시작하려면 [파일 열기] 버튼을 눌러주세요.");
-            
-            // 파일명 표시 초기화
             document.getElementById('db-filename').innerText = "파일 없음";
-            
-            // ★ 중요: 모달 닫지 않음 (closeModal 삭제함). 초기 화면 유지.
-            render(); // db가 null이므로 빈 화면이 됨
+            render(); 
         }
 
       } catch (err) {
         alert('오류 발생: ' + err);
-        db = null; // 에러나도 초기화
+        db = null;
       }
     };
   }
 
-  // (2) 파일 열기 버튼들 (사용자가 직접 눌렀을 때만 로드)
+  // (2) 파일 열기 (API 방식 우선)
   const openAction = async () => {
     if (window.showOpenFilePicker) {
       try {
@@ -114,7 +100,7 @@ function bindAllEvents() {
         db = new SQL.Database(new Uint8Array(arrayBuffer));
         
         document.getElementById('db-filename').innerText = fileHandle.name + " (편집 모드)";
-        closeModal('entryModal'); // 이때만 모달 닫힘
+        closeModal('entryModal');
         render();
       } catch (err) {
         if (err.name !== 'AbortError') alert('파일 열기 실패: ' + err);
@@ -130,13 +116,13 @@ function bindAllEvents() {
   const headerBtnOpen = document.getElementById('header-btn-open');
   if (headerBtnOpen) headerBtnOpen.onclick = openAction;
 
-  // (3) 저장 버튼 (헤더)
+  // (3) 저장 버튼 (헤더) -> ★ 여기가 핵심 수정됨
   const headerBtnSave = document.getElementById('header-btn-save');
   if (headerBtnSave) {
     headerBtnSave.onclick = () => saveCurrentDb(true);
   }
 
-  // (4) Input 파일 열기 (Fallback)
+  // (4) Input 파일 열기 (Fallback) -> ★ 이제 여기서도 나중에 저장 가능하게 처리
   const dbInput = document.getElementById('dbInput');
   if (dbInput) {
     dbInput.onchange = (e) => {
@@ -145,11 +131,15 @@ function bindAllEvents() {
       const reader = new FileReader();
       reader.onload = () => {
         db = new SQL.Database(new Uint8Array(reader.result));
-        fileHandle = null;
-        document.getElementById('db-filename').innerText = file.name + " (읽기 전용)";
+        
+        // Input으로 열면 처음엔 핸들이 없음 (null)
+        fileHandle = null; 
+        
+        document.getElementById('db-filename').innerText = file.name + " (편집 중 - 저장 시 위치 지정 필요)";
         closeModal('entryModal');
         render();
-        alert("⚠️ '파일 선택'으로 열면 덮어쓰기가 안 됩니다.");
+        
+        // ★ 경고 메시지 삭제: "덮어쓰기 안됩니다"라고 말하지 않음. 저장 누르면 되게 할 거니까.
       };
       reader.readAsArrayBuffer(file);
     };
@@ -168,7 +158,6 @@ function bindAllEvents() {
     };
   }
   
-  // (6) 사이드바 토글
   const hamBtn = document.getElementById('hamBtn');
   if(hamBtn) {
     hamBtn.onclick = () => {
@@ -177,7 +166,7 @@ function bindAllEvents() {
     };
   }
 
-  // (7) 채권 추가 폼
+  // (6) 폼 처리
   const addForm = document.getElementById('add-bond-form');
   if(addForm) {
     addForm.onsubmit = (e) => {
@@ -191,7 +180,6 @@ function bindAllEvents() {
     };
   }
 
-  // (8) 채권 수정 폼
   const editForm = document.getElementById('edit-bond-form');
   if(editForm) {
     editForm.onsubmit = (e) => {
@@ -205,56 +193,66 @@ function bindAllEvents() {
   }
 }
 
-// ====== [3] 저장 로직 (수동 저장) ======
+// ====== [3] ★ 스마트 저장 로직 (어떻게 열었든 덮어쓰기 되게 함) ======
 async function saveCurrentDb(showMsg = true) {
   if (!db) {
-    if (showMsg) alert("❌ 저장할 데이터가 없습니다. 파일을 열어주세요.");
+    if (showMsg) alert("❌ 저장할 데이터가 없습니다.");
     return;
   }
 
   try {
     const data = db.export();
 
-    // Case A: 핸들이 있는 경우 (덮어쓰기)
+    // 1. 핸들이 없으면(파일 선택으로 연 경우) -> 핸들을 먼저 만든다!
+    if (!fileHandle) {
+        if (window.showSaveFilePicker) {
+            // 사용자에게 "어떤 파일에 덮어쓸까요?" 물어봄 (최초 1회)
+            if(showMsg) alert("⚠️ 현재 '파일 선택' 모드로 열려있습니다.\n저장할 파일(원본)을 선택해주시면, 앞으로 계속 덮어쓰기 됩니다.");
+            
+            try {
+                fileHandle = await window.showSaveFilePicker({
+                    suggestedName: 'my_bonds.db',
+                    types: [{ description: 'SQLite DB', accept: { 'application/x-sqlite3': ['.db'] } }]
+                });
+                // 핸들 획득 성공! 이제 아래 로직으로 흐름
+            } catch (e) {
+                // 취소하면 저장 안함
+                return;
+            }
+        }
+    }
+
+    // 2. 핸들이 있으면 (또는 방금 만들었으면) -> 덮어쓰기 실행
     if (fileHandle) {
       const options = { mode: 'readwrite' };
+      // 권한 체크
       if ((await fileHandle.queryPermission(options)) !== 'granted') {
         const requestResult = await fileHandle.requestPermission(options);
-        if (requestResult !== 'granted') throw new Error("권한 거부됨");
+        if (requestResult !== 'granted') throw new Error("파일 쓰기 권한이 거부되었습니다.");
       }
+
       const writable = await fileHandle.createWritable();
       await writable.write(data);
       await writable.close();
-      if (showMsg) alert("✅ [덮어쓰기 완료] 저장되었습니다.");
+      
+      // 파일명 UI 갱신 (저장됨 표시)
+      document.getElementById('db-filename').innerText = fileHandle.name + " (저장됨)";
+      
+      if (showMsg) alert("✅ [저장 완료] 파일에 안전하게 저장되었습니다.");
     } 
-    // Case B: 핸들이 없는 경우 (다른 이름으로 저장)
+    // 3. API 미지원 브라우저 (최후의 수단)
     else {
-      if (window.showSaveFilePicker) {
-         if(showMsg && !confirm("연결된 파일이 없습니다. 새 파일로 저장하시겠습니까?")) return;
-         
-         const newHandle = await window.showSaveFilePicker({
-           suggestedName: 'my_bonds_save.db',
-           types: [{ description: 'SQLite DB', accept: { 'application/x-sqlite3': ['.db'] } }]
-         });
-         const writable = await newHandle.createWritable();
-         await writable.write(data);
-         await writable.close();
-         
-         if (showMsg) alert("✅ 새 파일로 저장되었습니다.");
-      } else {
-         const blob = new Blob([data], { type: 'application/x-sqlite3' });
-         const a = document.createElement('a');
-         a.href = URL.createObjectURL(blob);
-         a.download = 'my_bonds.db';
-         a.click();
-         if (showMsg) alert("✅ 다운로드 폴더에 저장되었습니다.");
-      }
+      const blob = new Blob([data], { type: 'application/x-sqlite3' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'my_bonds.db';
+      a.click();
+      if (showMsg) alert("✅ 다운로드 폴더에 저장되었습니다.");
     }
+
   } catch (err) {
-    if (err.name !== 'AbortError') {
-        console.error(err);
-        alert(`❌ 저장 실패: ${err.message}`);
-    }
+    console.error(err);
+    alert(`❌ 저장 실패: ${err.message}`);
   }
 }
 
@@ -308,12 +306,11 @@ function getBonds() {
   });
 }
 
-// ====== [5] 렌더링 로직 (DB 없으면 그리지 않음) ======
+// ====== [5] 렌더링 로직 ======
 function render() {
   const area = document.getElementById('render-area');
   if (!area) return; 
 
-  // ★ 중요: DB가 없으면 렌더링 영역을 비움 (혹은 모달 뒤에 빈 화면)
   if (!db) {
       area.innerHTML = '';
       return;
