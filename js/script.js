@@ -1,7 +1,7 @@
 // ====== 전역 변수 ======
 let db = null;
 let SQL = null;
-let fileHandle = null; // 파일 핸들 (자동 저장용)
+let fileHandle = null; 
 let activeTab = 'dashboard';
 let selectedYear = new Date().getFullYear();
 let currentChart = null;
@@ -22,47 +22,42 @@ window.onload = async () => {
 
 // ====== [1] 새 파일 만들기 (New) ======
 document.getElementById('btn-new-db').addEventListener('click', async () => {
-  // 1. 사용자 의도 확인 (요청하신 문구 출력)
   const isConfirmed = confirm("새 DB 파일을 만드시겠습니까?\n확인을 누르면 저장 위치 지정 창이 열립니다.");
-  
-  // 취소를 누르면 아무것도 하지 않고 함수 종료
   if (!isConfirmed) return;
 
-  // 2. DB 메모리 초기화
   db = new SQL.Database();
   createTables();
   
   try {
-    // 3. 저장 위치 지정 (File Picker)
     if (window.showSaveFilePicker) {
       fileHandle = await window.showSaveFilePicker({
         suggestedName: 'my_bonds.db',
         types: [{ description: 'SQLite DB', accept: {'application/x-sqlite3': ['.db']} }]
       });
-      // 4. 위치 지정 후 즉시 파일 생성 및 저장
+      // [추가] 파일명 표시
+      document.getElementById('db-filename').innerText = fileHandle.name;
+      
       await autoSave(); 
     } else {
-      // (구형 브라우저 대응) 파일 선택기가 없으면 다운로드 방식으로 즉시 저장
       alert("이 브라우저는 저장 위치 지정 기능을 완벽히 지원하지 않아, 기본 다운로드 폴더에 저장됩니다.");
+      // [추가] 파일명 표시 (fallback)
+      document.getElementById('db-filename').innerText = 'my_bonds_autosave.db';
       await autoSave();
     }
 
-    // 5. 화면 갱신 및 모달 닫기
     bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
     render();
 
   } catch (err) {
-    // 사용자가 저장 창에서 '취소'를 누른 경우 에러가 아니라 그냥 무시
     if(err.name !== 'AbortError') {
         alert('파일 생성 중 오류가 발생했습니다: ' + err);
     }
   }
 });
 
-// ====== [2] 파일 열기 (Open & Auto-Sync) ======
-document.getElementById('btn-open-db').addEventListener('click', async () => {
+// ====== [2] 파일 열기 공통 함수 (헤더 버튼 & 모달 버튼 공유) ======
+async function openDbFile() {
   if (window.showOpenFilePicker) {
-    // Modern Browser (PC Chrome/Edge): 직접 열기 및 핸들 확보
     try {
       [fileHandle] = await window.showOpenFilePicker({
         types: [{ description: 'SQLite DB', accept: {'application/x-sqlite3': ['.db']} }]
@@ -71,16 +66,27 @@ document.getElementById('btn-open-db').addEventListener('click', async () => {
       const arrayBuffer = await file.arrayBuffer();
       db = new SQL.Database(new Uint8Array(arrayBuffer));
       
-      bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
+      // [추가] 파일명 표시
+      document.getElementById('db-filename').innerText = fileHandle.name;
+
+      // 모달이 열려있다면 닫기
+      const modalEl = document.getElementById('entryModal');
+      const modal = bootstrap.Modal.getInstance(modalEl);
+      if (modal) modal.hide();
+      
       render();
     } catch (err) {
       if(err.name !== 'AbortError') alert('파일 열기 실패: ' + err);
     }
   } else {
-    // Fallback (Mobile/Safari): 기존 input 방식
+    // Fallback
     document.getElementById('dbInput').click();
   }
-});
+}
+
+// 이벤트 리스너 연결
+document.getElementById('btn-open-db').addEventListener('click', openDbFile); // 모달 안 버튼
+document.getElementById('header-btn-open').addEventListener('click', openDbFile); // [추가] 헤더 버튼
 
 // Fallback Input Change Handler
 document.getElementById('dbInput').addEventListener('change', (e) => {
@@ -89,7 +95,14 @@ document.getElementById('dbInput').addEventListener('change', (e) => {
   const reader = new FileReader();
   reader.onload = () => {
     db = new SQL.Database(new Uint8Array(reader.result));
-    bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
+    
+    // [추가] 파일명 표시
+    document.getElementById('db-filename').innerText = file.name;
+
+    const modalEl = document.getElementById('entryModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+    
     render();
   };
   reader.readAsArrayBuffer(file);
@@ -98,41 +111,29 @@ document.getElementById('dbInput').addEventListener('change', (e) => {
 // ====== [핵심] 자동 저장 로직 ======
 async function autoSave() {
   if (!db) return;
-  const data = db.export(); // Binary Data
-
-  const statusEl = document.getElementById('saveStatus');
-  statusEl.innerText = '저장 중...';
-  statusEl.className = 'badge rounded-pill text-bg-warning border fw-normal';
+  const data = db.export(); 
 
   try {
     if (fileHandle) {
-      // 1. 핸들이 있으면 해당 파일에 덮어쓰기
       const writable = await fileHandle.createWritable();
       await writable.write(data);
       await writable.close();
     } else {
-      // 2. 핸들이 없으면(모바일 등) 다운로드 트리거 (어쩔 수 없음)
-      // 사용자 경험을 위해 매번 다운로드보다는, 변경 시 알림을 주거나 필요 시 다운로드하도록 유도할 수 있음.
-      // 여기서는 지시대로 '즉시 저장'을 위해 다운로드 실행
       const blob = new Blob([data], { type: 'application/x-sqlite3' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'my_bonds_autosave.db';
       a.click();
     }
-    statusEl.innerText = '저장됨';
-    statusEl.className = 'badge rounded-pill text-bg-success border fw-normal';
   } catch (err) {
     console.error(err);
-    statusEl.innerText = '저장 실패';
-    statusEl.className = 'badge rounded-pill text-bg-danger border fw-normal';
   }
 }
 
-// ====== DB Mutation Helper (변경 발생 시 자동 저장) ======
+// ====== DB Mutation Helper ======
 function runQuery(sql, params = []) {
   db.run(sql, params);
-  autoSave(); // 쿼리 실행 후 즉시 저장
+  autoSave(); 
 }
 
 // ====== 테이블 스키마 ======
@@ -170,7 +171,7 @@ function getBonds() {
   });
 }
 
-// ====== 렌더링 (기존 로직 동일) ======
+// ====== 렌더링 ======
 function render() {
   const area = document.getElementById('render-area');
   area.innerHTML = '';
@@ -311,7 +312,7 @@ window.toggleStatus = (id, name, buyAmt) => {
 window.updateInterest = (id, y, m, v) => {
   runQuery(`INSERT INTO interests (bond_id, year, month, amount) VALUES (?, ?, ?, ?) 
           ON CONFLICT(bond_id, year, month) DO UPDATE SET amount = ?`, [id, y, m, v, v]);
-  render(); // 이자 수정은 잦으므로 렌더링 최적화 고려 가능하나 여기선 즉시 반영
+  render();
 };
 
 window.changeYear = (v) => { selectedYear = v; render(); };
