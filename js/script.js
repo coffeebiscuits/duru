@@ -40,7 +40,7 @@ document.getElementById('btn-new-db').addEventListener('click', async () => {
       await saveCurrentDb(false); // false: alert 띄우지 않음
     } else {
       alert("이 브라우저는 저장 위치 지정 기능을 완벽히 지원하지 않아, 기본 다운로드 폴더에 저장됩니다.");
-      document.getElementById('db-filename').innerText = 'my_bonds_autosave.db';
+      document.getElementById('db-filename').innerText = 'my_bonds.db';
       await saveCurrentDb(false);
     }
 
