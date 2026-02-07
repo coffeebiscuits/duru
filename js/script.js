@@ -1,7 +1,7 @@
 // ====== [0] 전역 변수 및 설정 ======
 let db = null;
 let SQL = null;
-let fileHandle = null; // ★ 파일 핸들 (저장 위치 기억)
+let fileHandle = null; // ★ 파일 핸들 (저장 위치 기억용)
 let activeTab = 'dashboard';
 let selectedYear = new Date().getFullYear();
 let currentChart = null;
@@ -34,11 +34,11 @@ window.onload = async () => {
 // ====== [2] 이벤트 리스너 통합 바인딩 ======
 function bindAllEvents() {
   
-  // (1) 새 파일 만들기 (생성 -> 저장 -> 초기화)
+  // (1) 새 파일 만들기
   const btnNew = document.getElementById('btn-new-db');
   if (btnNew) {
     btnNew.onclick = async () => {
-      if (!confirm("새 DB 파일을 생성하시겠습니까?\n(생성 후 파일만 저장되며, 자동으로 열리지 않습니다)")) return;
+      if (!confirm("새 DB 파일을 생성하시겠습니까?\n(생성 후 파일만 저장되며, 화면은 초기화됩니다)")) return;
 
       db = new SQL.Database();
       createTables();
@@ -59,7 +59,7 @@ function bindAllEvents() {
                 await writable.close();
                 saved = true;
             } catch(e) {
-                if (e.name !== 'AbortError') alert(e);
+                // 취소 시 조용히 리턴
             }
         } else {
             const blob = new Blob([data], { type: 'application/x-sqlite3' });
@@ -70,7 +70,7 @@ function bindAllEvents() {
             saved = true;
         }
 
-        // 저장 성공 여부와 관계없이, 새 파일 로직은 여기서 끝 (메모리 비움)
+        // 저장 후 메모리 비우기 (초기화)
         db = null; 
         fileHandle = null;
         
@@ -87,7 +87,7 @@ function bindAllEvents() {
     };
   }
 
-  // (2) 파일 열기 (API 방식 우선)
+  // (2) 파일 열기 (API 방식)
   const openAction = async () => {
     if (window.showOpenFilePicker) {
       try {
@@ -116,13 +116,13 @@ function bindAllEvents() {
   const headerBtnOpen = document.getElementById('header-btn-open');
   if (headerBtnOpen) headerBtnOpen.onclick = openAction;
 
-  // (3) 저장 버튼 (헤더) -> ★ 여기가 핵심 수정됨
+  // (3) 저장 버튼 (헤더)
   const headerBtnSave = document.getElementById('header-btn-save');
   if (headerBtnSave) {
     headerBtnSave.onclick = () => saveCurrentDb(true);
   }
 
-  // (4) Input 파일 열기 (Fallback) -> ★ 이제 여기서도 나중에 저장 가능하게 처리
+  // (4) Input 파일 열기 (Fallback -> 정상 루트)
   const dbInput = document.getElementById('dbInput');
   if (dbInput) {
     dbInput.onchange = (e) => {
@@ -132,14 +132,15 @@ function bindAllEvents() {
       reader.onload = () => {
         db = new SQL.Database(new Uint8Array(reader.result));
         
-        // Input으로 열면 처음엔 핸들이 없음 (null)
+        // Input으로 열면 브라우저가 핸들을 안 줌. 일단 null.
+        // 하지만 저장 버튼 누르면 핸들을 딸 것임.
         fileHandle = null; 
         
-        document.getElementById('db-filename').innerText = file.name + " (편집 중 - 저장 시 위치 지정 필요)";
+        document.getElementById('db-filename').innerText = file.name + " (편집 중)";
         closeModal('entryModal');
         render();
         
-        // ★ 경고 메시지 삭제: "덮어쓰기 안됩니다"라고 말하지 않음. 저장 누르면 되게 할 거니까.
+        // ★ 경고창 삭제함. 그냥 조용히 열림.
       };
       reader.readAsArrayBuffer(file);
     };
@@ -193,7 +194,7 @@ function bindAllEvents() {
   }
 }
 
-// ====== [3] ★ 스마트 저장 로직 (어떻게 열었든 덮어쓰기 되게 함) ======
+// ====== [3] ★ 수정된 저장 로직 (경고 없음, 자연스러운 연결) ======
 async function saveCurrentDb(showMsg = true) {
   if (!db) {
     if (showMsg) alert("❌ 저장할 데이터가 없습니다.");
@@ -203,44 +204,45 @@ async function saveCurrentDb(showMsg = true) {
   try {
     const data = db.export();
 
-    // 1. 핸들이 없으면(파일 선택으로 연 경우) -> 핸들을 먼저 만든다!
+    // 1. 핸들이 없으면 (Input으로 열었거나 새 파일인 경우) -> 저장 위치 물어보고 핸들 획득
     if (!fileHandle) {
         if (window.showSaveFilePicker) {
-            // 사용자에게 "어떤 파일에 덮어쓸까요?" 물어봄 (최초 1회)
-            if(showMsg) alert("⚠️ 현재 '파일 선택' 모드로 열려있습니다.\n저장할 파일(원본)을 선택해주시면, 앞으로 계속 덮어쓰기 됩니다.");
-            
             try {
-                fileHandle = await window.showSaveFilePicker({
+                // ★ 경고 없이 바로 저장 창 띄움
+                const newHandle = await window.showSaveFilePicker({
                     suggestedName: 'my_bonds.db',
                     types: [{ description: 'SQLite DB', accept: { 'application/x-sqlite3': ['.db'] } }]
                 });
-                // 핸들 획득 성공! 이제 아래 로직으로 흐름
+                
+                // ★ 핵심: 사용자가 선택한 파일을 이제부터 '내 파일'로 기억함
+                fileHandle = newHandle;
+                
             } catch (e) {
-                // 취소하면 저장 안함
+                // 취소하면 저장 중단
                 return;
             }
         }
     }
 
-    // 2. 핸들이 있으면 (또는 방금 만들었으면) -> 덮어쓰기 실행
+    // 2. 핸들이 있으면 (방금 얻었거나 원래 있었거나) -> 덮어쓰기
     if (fileHandle) {
       const options = { mode: 'readwrite' };
-      // 권한 체크
+      // 권한 체크 (필요시 팝업)
       if ((await fileHandle.queryPermission(options)) !== 'granted') {
         const requestResult = await fileHandle.requestPermission(options);
-        if (requestResult !== 'granted') throw new Error("파일 쓰기 권한이 거부되었습니다.");
+        if (requestResult !== 'granted') throw new Error("권한이 없어 저장할 수 없습니다.");
       }
 
       const writable = await fileHandle.createWritable();
       await writable.write(data);
       await writable.close();
       
-      // 파일명 UI 갱신 (저장됨 표시)
+      // 파일명 UI 갱신
       document.getElementById('db-filename').innerText = fileHandle.name + " (저장됨)";
       
-      if (showMsg) alert("✅ [저장 완료] 파일에 안전하게 저장되었습니다.");
+      if (showMsg) alert("✅ 저장되었습니다.");
     } 
-    // 3. API 미지원 브라우저 (최후의 수단)
+    // 3. API 미지원 브라우저 (다운로드)
     else {
       const blob = new Blob([data], { type: 'application/x-sqlite3' });
       const a = document.createElement('a');
@@ -490,3 +492,4 @@ window.openEditModal = (id) => {
   }
   stmt.free();
 };
+
