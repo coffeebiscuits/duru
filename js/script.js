@@ -336,7 +336,7 @@ function render() {
   else if (activeTab === 'analytics') renderAnalytics(area, bonds);
 }
 
-// --- 대시보드 탭 ---
+// ====== 대시보드 탭 ======
 function renderDashboard(container, bonds) {
   const currentYear = new Date().getFullYear();
   const activeBonds = bonds.filter(b => b.status === 'active');
@@ -350,8 +350,6 @@ function renderDashboard(container, bonds) {
   const scheduledCount = scheduledBonds.length;
 
   container.innerHTML = `
-    <h3 class="mb-4 fw-bold">안녕하세요 <span class="fs-6 fw-normal text-secondary">채권 투자 현황입니다.</span></h3>
-    
     <div class="row g-4 mb-4">
       <div class="col-12 col-md-4">
         <div class="stat-card h-100">
@@ -415,7 +413,7 @@ function renderDashboard(container, bonds) {
 }
 
 
-
+// ====== 채권관리 탭 ======
 function renderList(container, bonds) {
   const filteredBonds = bonds.filter(b => {
     if (listFilter === 'all') return true;
@@ -431,9 +429,9 @@ function renderList(container, bonds) {
     </div>
 
     <div class="mb-4 d-flex gap-2">
-      <button onclick="setListFilter('all')" class="btn ${listFilter === 'all' ? 'btn-dark' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">전체</button>
+      <button onclick="setListFilter('all')" class="btn ${listFilter === 'all' ? 'btn-success' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">전체</button>
       <button onclick="setListFilter('active')" class="btn ${listFilter === 'active' ? 'btn-success' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">보유중</button>
-      <button onclick="setListFilter('completed')" class="btn ${listFilter === 'completed' ? 'btn-primary' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">상환완료</button>
+      <button onclick="setListFilter('completed')" class="btn ${listFilter === 'completed' ? 'btn-success' : 'btn-outline-secondary'} rounded-pill px-3 btn-sm">상환완료</button>
     </div>
 
     <div class="content-box mt-0">
@@ -490,7 +488,7 @@ function renderList(container, bonds) {
               `;
               
               return `<tr>
-                  <td class="fw-bold text-primary text-decoration-underline" style="cursor:pointer;" onclick="openEditModal(${b.id})">${b.name}</td>
+                  <td class="fw-bold text-dark" style="cursor:pointer;" onclick="openEditModal(${b.id})">${b.name}</td>
                   <td class="text-secondary small">${b.account}</td>
                   <td class="text-secondary small">${b.buyDate}</td>
                   <td class="text-secondary small">${b.maturityDate}</td>
