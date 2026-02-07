@@ -103,6 +103,7 @@ function bindAllEvents() {
         const file = await fileHandle.getFile();
         const arrayBuffer = await file.arrayBuffer();
         db = new SQL.Database(new Uint8Array(arrayBuffer));
+        migrateSchema();
         
         document.getElementById('db-filename').innerText = fileHandle.name + " (편집 모드)";
         closeModal('entryModal');
@@ -277,6 +278,78 @@ function runQuery(sql, params = []) {
   if (!db) return;
   db.run(sql, params);
   render();
+}
+
+/**
+ * [설정] DB 스키마 정의 (전체 컬럼 명세)
+ * - 이 리스트가 DB의 '정답'입니다.
+ * - 여기에 적힌 대로 DB가 자동 수정됩니다. (없는 건 추가, 불필요한 건 삭제)
+ */
+const DB_SCHEMA = {
+  // 1. 채권 정보 테이블
+  bonds: {
+    id: 'INTEGER PRIMARY KEY AUTOINCREMENT', // (삭제 방지용 필수 명시)
+    name: 'TEXT',
+    type: 'TEXT',             // ★ 신규 추가된 컬럼
+    account: 'TEXT',
+    buyDate: 'TEXT',
+    maturityDate: 'TEXT',
+    rate: 'REAL',
+    buyAmount: 'INTEGER',
+    quantity: 'INTEGER',
+    status: 'TEXT',
+    redemptionAmount: 'INTEGER'
+  },
+  
+  // 2. 이자 기록 테이블
+  interests: {
+    bond_id: 'INTEGER',
+    year: 'INTEGER',
+    month: 'INTEGER',
+    amount: 'INTEGER'
+  }
+};
+
+function migrateSchema() {
+  if (!db) return;
+
+  for (const [tableName, requiredColumns] of Object.entries(DB_SCHEMA)) {
+    try {
+      // 1. 현재 DB 테이블 정보 확인
+      const res = db.exec(`PRAGMA table_info(${tableName})`);
+      if (res.length === 0 || !res[0].values) continue;
+
+      // 현재 DB에 있는 컬럼들
+      const existingColumns = res[0].values.map(col => col[1]);
+      // 스키마에 정의된 컬럼들
+      const schemaColumnNames = Object.keys(requiredColumns);
+
+      // [Step A] 컬럼 추가 (Schema엔 있는데 DB엔 없는 경우)
+      for (const [colName, colType] of Object.entries(requiredColumns)) {
+        if (!existingColumns.includes(colName)) {
+          // SQLite ALTER TABLE ADD COLUMN (PK 제약조건 제외하고 추가)
+          const typeDef = colType.replace('PRIMARY KEY AUTOINCREMENT', '');
+          db.run(`ALTER TABLE ${tableName} ADD COLUMN ${colName} ${typeDef}`);
+          console.log(`✅ [추가] '${tableName}' 테이블에 '${colName}' 컬럼을 추가했습니다.`);
+        }
+      }
+
+      // [Step B] 컬럼 삭제 (DB엔 있는데 Schema엔 없는 경우)
+      for (const existingCol of existingColumns) {
+        if (!schemaColumnNames.includes(existingCol)) {
+          try {
+            db.run(`ALTER TABLE ${tableName} DROP COLUMN ${existingCol}`);
+            console.log(`🗑️ [삭제] '${tableName}' 테이블에서 불필요한 '${existingCol}' 컬럼을 삭제했습니다.`);
+          } catch (dropErr) {
+            console.warn(`⚠️ [주의] '${existingCol}' 삭제 실패 (SQLite 버전 제한일 수 있음):`, dropErr);
+          }
+        }
+      }
+
+    } catch (e) {
+      console.error(`❌ [오류] '${tableName}' 테이블 동기화 실패:`, e);
+    }
+  }
 }
 
 function createTables() {
