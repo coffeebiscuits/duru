@@ -8,7 +8,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 
   <link rel="stylesheet" href="./css/style.css">
@@ -20,8 +19,8 @@
       <button class="hamburger" id="hamBtn"><span></span><span></span><span></span></button>
       <span class="profile-name">🌿 채권관리</span>
     </div>
-    <div class="d-flex align-items-center gap-3">
-      <button onclick="saveDbToFile()" class="btn btn-sm btn-outline-success fw-bold" style="border-radius: 20px;">💾 DB 저장</button>
+    <div class="d-flex align-items-center gap-2">
+      <span id="saveStatus" class="badge rounded-pill text-bg-light text-secondary border fw-normal">대기중</span>
       <div id="clock" class="clock-text">00:00:00</div>
     </div>
   </header>
@@ -37,40 +36,34 @@
     </nav>
 
     <main class="main" id="render-area">
-      </main>
+    </main>
   </div>
 
   <div class="modal fade" id="entryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-lg">
-      <div class="modal-content text-center p-4" style="background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);">
-        <div class="modal-body">
-          <h2 class="mb-3" style="font-weight: 800; color: var(--text-main);">🌿 채권 관리 시작하기</h2>
-          <p class="text-secondary mb-5">
-            서버 없는 안전한 로컬 자산 관리.<br>
-            <b>.db 파일</b>은 오직 당신의 기기에만 저장됩니다.
-          </p>
-          
-          <div class="row g-4 justify-content-center">
-            <div class="col-md-5">
-              <div class="card h-100 border-0 shadow-sm p-3 stat-card" onclick="initNewDb()" style="cursor: pointer;">
-                <div class="card-body">
-                  <div style="font-size: 3rem; margin-bottom: 10px;">🆕</div>
-                  <h4 style="font-weight: 700; color: var(--accent-color);">새로 시작하기</h4>
-                  <p class="small text-secondary m-0">새로운 DB를 생성하고<br>관리 화면으로 진입합니다.</p>
-                </div>
+      <div class="modal-content text-center p-5 border-0 shadow-lg">
+        <h2 class="mb-3 fw-bold" style="color:#1e293b;">🌿 채권 관리 시작하기</h2>
+        <p class="text-secondary mb-5">서버 없이, <b>로컬 파일</b>에 실시간으로 자동 저장됩니다.</p>
+        
+        <div class="row g-4 justify-content-center">
+          <div class="col-md-5">
+            <div class="card h-100 border-0 shadow-sm p-3 hover-card" id="btn-new-db" style="cursor: pointer;">
+              <div class="card-body">
+                <div style="font-size: 3rem; margin-bottom: 15px;">🆕</div>
+                <h4 class="fw-bold text-success">새 파일 만들기</h4>
+                <p class="small text-secondary m-0">새 DB 파일을 생성하고<br>자동 저장을 시작합니다.</p>
               </div>
             </div>
-
-            <div class="col-md-5">
-              <div class="card h-100 border-0 shadow-sm p-3 stat-card" onclick="document.getElementById('dbInput').click()" style="cursor: pointer;">
-                <div class="card-body">
-                  <div style="font-size: 3rem; margin-bottom: 10px;">📂</div>
-                  <h4 style="font-weight: 700; color: #1e3a8a;">DB 파일 불러오기</h4>
-                  <p class="small text-secondary m-0">기존에 저장한 <b>.db 파일</b>을<br>업로드하여 이어합니다.</p>
-                </div>
+          </div>
+          <div class="col-md-5">
+            <div class="card h-100 border-0 shadow-sm p-3 hover-card" id="btn-open-db" style="cursor: pointer;">
+              <div class="card-body">
+                <div style="font-size: 3rem; margin-bottom: 15px;">📂</div>
+                <h4 class="fw-bold text-primary">파일 열기</h4>
+                <p class="small text-secondary m-0">PC 내의 .db 파일을 엽니다.<br>(수정 시 자동 덮어쓰기)</p>
               </div>
-              <input type="file" id="dbInput" accept=".db,.sqlite" style="display: none;" onchange="loadDbFromFile(this)">
             </div>
+            <input type="file" id="dbInput" accept=".db,.sqlite" style="display: none;">
           </div>
         </div>
       </div>
@@ -86,34 +79,16 @@
         </div>
         <form id="add-bond-form">
           <div class="modal-body">
-            <div class="mb-3">
-              <label class="form-label text-secondary small fw-bold">채권명</label>
-              <input name="name" required class="form-control" placeholder="예: 삼성전자 123">
+            <div class="mb-3"><label class="form-label text-secondary small fw-bold">채권명</label><input name="name" required class="form-control" placeholder="예: 삼성전자 123"></div>
+            <div class="row mb-3">
+              <div class="col"><label class="form-label text-secondary small fw-bold">계좌명</label><input name="account" required class="form-control"></div>
+              <div class="col"><label class="form-label text-secondary small fw-bold">이율(%)</label><input name="rate" type="number" step="0.01" required class="form-control"></div>
             </div>
             <div class="row mb-3">
-              <div class="col">
-                <label class="form-label text-secondary small fw-bold">계좌명</label>
-                <input name="account" required class="form-control">
-              </div>
-              <div class="col">
-                <label class="form-label text-secondary small fw-bold">이율(%)</label>
-                <input name="rate" type="number" step="0.01" required class="form-control">
-              </div>
+              <div class="col"><label class="form-label text-secondary small fw-bold">매수일</label><input name="buyDate" type="date" required class="form-control"></div>
+              <div class="col"><label class="form-label text-secondary small fw-bold">만기일</label><input name="maturityDate" type="date" required class="form-control"></div>
             </div>
-            <div class="row mb-3">
-              <div class="col">
-                <label class="form-label text-secondary small fw-bold">매수일</label>
-                <input name="buyDate" type="date" required class="form-control">
-              </div>
-              <div class="col">
-                <label class="form-label text-secondary small fw-bold">만기일</label>
-                <input name="maturityDate" type="date" required class="form-control">
-              </div>
-            </div>
-            <div class="mb-3">
-              <label class="form-label text-secondary small fw-bold">매수금액(원)</label>
-              <input name="buyAmount" type="number" required class="form-control">
-            </div>
+            <div class="mb-3"><label class="form-label text-secondary small fw-bold">매수금액(원)</label><input name="buyAmount" type="number" required class="form-control"></div>
           </div>
           <div class="modal-footer border-0">
             <button type="submit" class="btn btn-primary-custom w-100 py-3 rounded-3 shadow-sm">등록 완료</button>
