@@ -34,15 +34,14 @@ document.getElementById('btn-new-db').addEventListener('click', async () => {
         suggestedName: 'my_bonds.db',
         types: [{ description: 'SQLite DB', accept: {'application/x-sqlite3': ['.db']} }]
       });
-      // [추가] 파일명 표시
       document.getElementById('db-filename').innerText = fileHandle.name;
       
-      await autoSave(); 
+      // 새 파일 생성 시에는 초기화를 위해 1회 저장 실행
+      await saveCurrentDb(false); // false: alert 띄우지 않음
     } else {
       alert("이 브라우저는 저장 위치 지정 기능을 완벽히 지원하지 않아, 기본 다운로드 폴더에 저장됩니다.");
-      // [추가] 파일명 표시 (fallback)
       document.getElementById('db-filename').innerText = 'my_bonds_autosave.db';
-      await autoSave();
+      await saveCurrentDb(false);
     }
 
     bootstrap.Modal.getInstance(document.getElementById('entryModal')).hide();
@@ -55,7 +54,7 @@ document.getElementById('btn-new-db').addEventListener('click', async () => {
   }
 });
 
-// ====== [2] 파일 열기 공통 함수 (헤더 버튼 & 모달 버튼 공유) ======
+// ====== [2] 파일 열기 공통 함수 ======
 async function openDbFile() {
   if (window.showOpenFilePicker) {
     try {
@@ -66,10 +65,8 @@ async function openDbFile() {
       const arrayBuffer = await file.arrayBuffer();
       db = new SQL.Database(new Uint8Array(arrayBuffer));
       
-      // [추가] 파일명 표시
       document.getElementById('db-filename').innerText = fileHandle.name;
 
-      // 모달이 열려있다면 닫기
       const modalEl = document.getElementById('entryModal');
       const modal = bootstrap.Modal.getInstance(modalEl);
       if (modal) modal.hide();
@@ -79,14 +76,15 @@ async function openDbFile() {
       if(err.name !== 'AbortError') alert('파일 열기 실패: ' + err);
     }
   } else {
-    // Fallback
     document.getElementById('dbInput').click();
   }
 }
 
-// 이벤트 리스너 연결
-document.getElementById('btn-open-db').addEventListener('click', openDbFile); // 모달 안 버튼
-document.getElementById('header-btn-open').addEventListener('click', openDbFile); // [추가] 헤더 버튼
+document.getElementById('btn-open-db').addEventListener('click', openDbFile);
+document.getElementById('header-btn-open').addEventListener('click', openDbFile);
+
+// [추가] 수동 저장 버튼 이벤트 연결
+document.getElementById('header-btn-save').addEventListener('click', () => saveCurrentDb(true));
 
 // Fallback Input Change Handler
 document.getElementById('dbInput').addEventListener('change', (e) => {
@@ -95,8 +93,6 @@ document.getElementById('dbInput').addEventListener('change', (e) => {
   const reader = new FileReader();
   reader.onload = () => {
     db = new SQL.Database(new Uint8Array(reader.result));
-    
-    // [추가] 파일명 표시
     document.getElementById('db-filename').innerText = file.name;
 
     const modalEl = document.getElementById('entryModal');
@@ -108,32 +104,42 @@ document.getElementById('dbInput').addEventListener('change', (e) => {
   reader.readAsArrayBuffer(file);
 });
 
-// ====== [핵심] 자동 저장 로직 ======
-async function autoSave() {
-  if (!db) return;
+// ====== [변경] 수동 저장 로직 (showMsg: 알림 표시 여부) ======
+async function saveCurrentDb(showMsg = true) {
+  if (!db) {
+    if(showMsg) alert("저장할 데이터베이스가 없습니다.");
+    return;
+  }
+  
   const data = db.export(); 
 
   try {
     if (fileHandle) {
+      // 파일 핸들이 있으면 덮어쓰기
       const writable = await fileHandle.createWritable();
       await writable.write(data);
       await writable.close();
+      if(showMsg) alert("저장되었습니다.");
     } else {
+      // 파일 핸들이 없으면 다운로드 (Fallback)
       const blob = new Blob([data], { type: 'application/x-sqlite3' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'my_bonds_autosave.db';
       a.click();
+      if(showMsg) alert("파일이 다운로드 폴더에 저장되었습니다.");
     }
   } catch (err) {
     console.error(err);
+    alert("저장 중 오류가 발생했습니다.");
   }
 }
 
-// ====== DB Mutation Helper ======
+// ====== [변경] DB Mutation Helper (자동 저장 제거됨) ======
 function runQuery(sql, params = []) {
   db.run(sql, params);
-  autoSave(); 
+  // autoSave() 호출 제거됨 -> 이제 데이터만 변경되고 저장은 안 됨
+  render(); // 화면만 갱신
 }
 
 // ====== 테이블 스키마 ======
@@ -267,7 +273,7 @@ function renderAnalytics(container, bonds) {
   currentChart = new Chart(ctx, { type: 'line', data: { labels: Array.from({length:12}, (_,i)=>`${i+1}월`), datasets: [{ label: '월별 수익', data: monthlyData, borderColor: '#059669', backgroundColor: 'rgba(5, 150, 105, 0.1)', fill: true, tension: 0.4 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { color: '#f1f5f9' } } } } });
 }
 
-// ====== 이벤트 핸들러 & Auto Save 적용 ======
+// ====== 이벤트 핸들러 ======
 
 document.getElementById('nav-menu').addEventListener('click', (e) => {
   const target = e.target.closest('a');
@@ -279,7 +285,6 @@ document.getElementById('hamBtn').addEventListener('click', () => {
   sb.style.display = sb.style.display === 'block' ? 'none' : 'block';
 });
 
-// [변경점] db.run 대신 runQuery(자동저장) 사용
 document.getElementById('add-bond-form').onsubmit = (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -293,7 +298,6 @@ document.getElementById('add-bond-form').onsubmit = (e) => {
 
 window.deleteBond = (id) => {
   if(confirm('삭제하시겠습니까?')) { 
-    // 트랜잭션 개념 대신 순차 실행
     runQuery("DELETE FROM bonds WHERE id = ?", [id]);
     runQuery("DELETE FROM interests WHERE bond_id = ?", [id]);
     render(); 
@@ -301,7 +305,7 @@ window.deleteBond = (id) => {
 };
 
 window.toggleStatus = (id, name, buyAmt) => {
-  const inputVal = prompt(`'${name}' 채권의 만기(상환) 금액을 입력하세요.\n(입력 미시 매수금액과 동일)`, buyAmt);
+  const inputVal = prompt(`'${name}' 채권의 만기(상환) 금액을 입력하세요.\n(미 입력시 매수금액과 동일)`, buyAmt);
   if (inputVal !== null) {
     const finalAmt = inputVal.trim() === '' ? buyAmt : Number(inputVal);
     runQuery("UPDATE bonds SET status = 'completed', redemptionAmount = ? WHERE id = ?", [finalAmt, id]);
@@ -312,7 +316,7 @@ window.toggleStatus = (id, name, buyAmt) => {
 window.updateInterest = (id, y, m, v) => {
   runQuery(`INSERT INTO interests (bond_id, year, month, amount) VALUES (?, ?, ?, ?) 
           ON CONFLICT(bond_id, year, month) DO UPDATE SET amount = ?`, [id, y, m, v, v]);
-  render();
+  render(); // 이자 입력 시 즉시 반영됨
 };
 
 window.changeYear = (v) => { selectedYear = v; render(); };
