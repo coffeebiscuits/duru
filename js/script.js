@@ -343,7 +343,7 @@ function renderDashboard(container, bonds) {
   const activeBonds = bonds.filter(b => b.status === 'active');
   const totalInv = activeBonds.reduce((a, c) => a + c.buyAmount, 0);
 
-  // 올해 상환 예정 데이터 계산 (상태가 'active'이고 만기 연도가 올해인 채권)
+  // 올해 상환 예정 데이터 계산
   const scheduledBonds = activeBonds.filter(b => {
     return b.maturityDate && parseInt(b.maturityDate.substring(0, 4)) === currentYear;
   });
@@ -351,20 +351,33 @@ function renderDashboard(container, bonds) {
   const scheduledCount = scheduledBonds.length;
 
   container.innerHTML = `
-    <h3 class="mb-4 fw-bold">안녕하세요 <span class="fs-6 fw-normal text-secondary">채권 투자 현황입니다.</span></h3>
     <div class="row g-4">
-      <div class="col-md-4"><div class="stat-card"><div class="stat-title">현재 총 투자 원금</div><div class="stat-value" style="color:var(--accent-color);">${formatKRW(totalInv)}</div></div></div>
-      <div class="col-md-4"><div class="stat-card"><div class="stat-title">보유 채권 상품 수</div><div class="stat-value">${activeBonds.length} 개</div></div></div>
-      <div class="col-md-4">
-        <div class="stat-card">
-          <div class="stat-title">${currentYear}년 상환 예정 금액</div>
-          <div class="stat-value">${formatKRW(scheduledAmount)}</div>
-          <div class="small text-secondary mt-1" style="font-size: 0.85rem;">총 ${scheduledCount}건</div>
+      <div class="col-lg-4">
+        <div class="d-flex flex-column gap-3 h-100">
+          <div class="stat-card flex-grow-1 d-flex flex-column justify-content-center">
+            <div class="stat-title">현재 총 투자 원금</div>
+            <div class="stat-value" style="color:var(--accent-color);">${formatKRW(totalInv)}</div>
+          </div>
+          <div class="stat-card flex-grow-1 d-flex flex-column justify-content-center">
+            <div class="stat-title">보유 채권 상품 수</div>
+            <div class="stat-value">${activeBonds.length} 개</div>
+          </div>
+          <div class="stat-card flex-grow-1 d-flex flex-column justify-content-center">
+            <div class="stat-title">${currentYear}년 상환 예정 금액</div>
+            <div class="stat-value">${formatKRW(scheduledAmount)}</div>
+            <div class="small text-secondary mt-1" style="font-size: 0.85rem;">총 ${scheduledCount}건</div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="row mt-4">
-      <div class="col-lg-12"><div class="content-box"><h5 class="fw-bold mb-4">자산 비중 (Top 5)</h5><canvas id="dashChart" height="100"></canvas></div></div>
+      
+      <div class="col-lg-8">
+        <div class="content-box h-100 d-flex flex-column">
+          <h5 class="fw-bold mb-4">자산 비중 (Top 5)</h5>
+          <div class="flex-grow-1 d-flex align-items-center">
+            <canvas id="dashChart"></canvas>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -384,6 +397,8 @@ function renderDashboard(container, bonds) {
         }] 
       }, 
       options: { 
+        responsive: true,
+        maintainAspectRatio: false, // 컨테이너 높이에 맞게 차트 크기 조절
         plugins: { legend: { display: false } }, 
         scales: { 
           y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, 
@@ -393,7 +408,6 @@ function renderDashboard(container, bonds) {
     });
   }
 }
-
 
 function renderList(container, bonds) {
   // 1. 상태에 따른 필터링 로직 적용
