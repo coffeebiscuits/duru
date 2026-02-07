@@ -3,24 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>채권 관리 시스템</title>
-  
+  <title>채권 관리 시스템</title
   <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
-
   <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-
   <header class="header">
     <div class="profile-wrap">
       <button class="hamburger" id="hamBtn"><span></span><span></span><span></span></button>
       <span class="profile-name">🌿 채권관리</span>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <span id="saveStatus" class="badge rounded-pill text-bg-light text-secondary border fw-normal">대기중</span>
+      <span id="db-filename" class="fw-bold text-success small"></span>
+      <button id="header-btn-open" class="btn btn-sm btn-outline-secondary" style="font-size: 0.8rem;">
+        DB 불러오기</button>
       <div id="clock" class="clock-text">00:00:00</div>
     </div>
   </header>
