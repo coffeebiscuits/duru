@@ -225,7 +225,9 @@ function renderDashboard(container, bonds) {
 
 function renderList(container, bonds) {
   container.innerHTML = `
-    <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">자산 관리</h3><button class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBondModal">+ 새 자산 등록</button></div>
+    <div class="d-flex justify-content-between align-items-center mb-4"><h3 class="fw-bold">채권 관리</h3>
+    <button class="btn btn-primary-custom rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#addBondModal">
+    + 채권 등록</button></div>
     <div class="content-box mt-0"><div class="table-responsive"><table class="table table-hover"><thead><tr><th>채권명</th><th>계좌</th><th>매수금액</th><th>이율</th><th>만기일</th><th>상태/손익</th><th>관리</th></tr></thead><tbody>
     ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-5 text-muted">데이터가 없습니다.</td></tr>' : 
       bonds.slice().reverse().map(b => {
