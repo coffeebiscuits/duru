@@ -343,7 +343,7 @@ function renderDashboard(container, bonds) {
   const activeBonds = bonds.filter(b => b.status === 'active');
   const totalInv = activeBonds.reduce((a, c) => a + c.buyAmount, 0);
 
-  // 올해 상환 예정 데이터 계산
+  // 올해 상환 예정 데이터 계산 (상태가 'active'이고 만기 연도가 올해인 채권)
   const scheduledBonds = activeBonds.filter(b => {
     return b.maturityDate && parseInt(b.maturityDate.substring(0, 4)) === currentYear;
   });
@@ -364,9 +364,7 @@ function renderDashboard(container, bonds) {
       </div>
     </div>
     <div class="row mt-4">
-      <div class="col-lg-8"><div class="content-box"><h5 class="fw-bold mb-4">자산 비중 (Top 5)</h5><canvas id="dashChart" height="100"></canvas></div></div>
-      ${bonds.slice(-4).reverse().map(b => `<tr><td class="fw-bold text-secondary">${b.name}</td><td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td></tr>`).join('')}
-      </tbody></table></div></div>
+      <div class="col-lg-12"><div class="content-box"><h5 class="fw-bold mb-4">자산 비중 (Top 5)</h5><canvas id="dashChart" height="100"></canvas></div></div>
     </div>
   `;
 
@@ -374,7 +372,25 @@ function renderDashboard(container, bonds) {
   if (canvas && typeof Chart !== 'undefined') {
     const ctx = canvas.getContext('2d');
     if (currentChart) currentChart.destroy();
-    currentChart = new Chart(ctx, { type: 'bar', data: { labels: activeBonds.slice(0, 5).map(b => b.name), datasets: [{ label: '투자금액', data: activeBonds.slice(0, 5).map(b => b.buyAmount), backgroundColor: '#059669', borderRadius: 6 }] }, options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, x: { grid: { display: false } } } } });
+    currentChart = new Chart(ctx, { 
+      type: 'bar', 
+      data: { 
+        labels: activeBonds.slice(0, 5).map(b => b.name), 
+        datasets: [{ 
+          label: '투자금액', 
+          data: activeBonds.slice(0, 5).map(b => b.buyAmount), 
+          backgroundColor: '#059669', 
+          borderRadius: 6 
+        }] 
+      }, 
+      options: { 
+        plugins: { legend: { display: false } }, 
+        scales: { 
+          y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, 
+          x: { grid: { display: false } } 
+        } 
+      } 
+    });
   }
 }
 
