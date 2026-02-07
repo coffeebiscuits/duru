@@ -1,7 +1,7 @@
 // ====== [0] 전역 변수 및 설정 ======
 let db = null;
 let SQL = null;
-let fileHandle = null; // ★ 파일 핸들 (저장 위치 기억용)
+let fileHandle = null;
 let activeTab = 'dashboard';
 let selectedYear = new Date().getFullYear();
 let currentChart = null;
@@ -382,21 +382,48 @@ function renderList(container, bonds) {
               <th>이율</th>
               <th>수량</th>
               <th>매수금액</th>
-              <th>상태/손익</th>
+              <th>상태/전체손익</th>
               <th>관리</th>
             </tr>
           </thead>
           <tbody>
           ${bonds.length === 0 ? '<tr><td colspan="9" class="text-center py-5 text-muted">데이터가 없습니다.</td></tr>' : 
             bonds.slice().reverse().map(b => {
-              let statusBadge = `<span class="badge-soft status-wait">보유중</span>`, profitText = '';
-              if(b.status === 'completed') {
-                statusBadge = `<span class="badge-soft status-done">완료</span>`;
-                const diff = (b.redemptionAmount || b.buyAmount) - b.buyAmount;
-                profitText = diff > 0 ? `<div class="profit-plus mt-1">+${formatKRW(diff)}</div>` : (diff < 0 ? `<div class="profit-minus mt-1">${formatKRW(diff)}</div>` : `<div class="text-secondary small mt-1">원금상환</div>`);
+              // 1. 누적 이자 계산
+              let totalInterest = 0;
+              if (b.interests) {
+                Object.values(b.interests).forEach(yearData => {
+                  Object.values(yearData).forEach(amount => {
+                    totalInterest += (Number(amount) || 0);
+                  });
+                });
               }
+
+              // 2. 자본 차익 계산 (상환 완료 시에만 발생)
+              let capitalGain = 0;
+              if (b.status === 'completed') {
+                capitalGain = (b.redemptionAmount || b.buyAmount) - b.buyAmount;
+              }
+
+              // 3. 전체 손익 계산
+              const netProfit = totalInterest + capitalGain;
+
+              // 4. UI 뱃지 및 텍스트 설정
+              let statusBadge = b.status === 'completed' 
+                ? `<span class="badge-soft status-done">완료</span>` 
+                : `<span class="badge-soft status-wait">보유중</span>`;
+
+              // 손익 컬러 클래스 결정
+              const profitClass = netProfit > 0 ? 'profit-plus' : (netProfit < 0 ? 'profit-minus' : 'text-secondary');
+              const sign = netProfit > 0 ? '+' : '';
+
+              const profitText = `
+                <div class="${profitClass} fw-bold mt-1">${sign}${formatKRW(netProfit)}</div>
+                <div class="text-muted" style="font-size: 0.7rem;">
+                  (차익: ${formatKRW(capitalGain)}, 이자: ${formatKRW(totalInterest)})
+                </div>
+              `;
               
-              // 헤더 순서와 <td> 데이터 순서를 정확히 일치시킴
               return `<tr>
                   <td class="fw-bold text-primary text-decoration-underline" style="cursor:pointer;" onclick="openEditModal(${b.id})">${b.name}</td>
                   <td class="text-secondary small">${b.account}</td>
