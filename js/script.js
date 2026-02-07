@@ -396,6 +396,7 @@ function renderList(container, bonds) {
                 profitText = diff > 0 ? `<div class="profit-plus mt-1">+${formatKRW(diff)}</div>` : (diff < 0 ? `<div class="profit-minus mt-1">${formatKRW(diff)}</div>` : `<div class="text-secondary small mt-1">원금상환</div>`);
               }
               
+              // 헤더 순서와 <td> 데이터 순서를 정확히 일치시킴
               return `<tr>
                   <td class="fw-bold text-primary text-decoration-underline" style="cursor:pointer;" onclick="openEditModal(${b.id})">${b.name}</td>
                   <td class="text-secondary small">${b.account}</td>
