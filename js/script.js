@@ -350,25 +350,22 @@ function renderDashboard(container, bonds) {
   const scheduledAmount = scheduledBonds.reduce((a, c) => a + c.buyAmount, 0);
   const scheduledCount = scheduledBonds.length;
 
-  // 망가진 레이아웃을 정리하고 유령 코드(slice/map)를 완전히 제거함
   container.innerHTML = `
-    <h3 class="mb-4 fw-bold">안녕하세요 <span class="fs-6 fw-normal text-secondary">채권 투자 현황입니다.</span></h3>
-    
     <div class="row g-4 mb-4">
-      <div class="col-md-4">
-        <div class="stat-card h-100">
+      <div class="col-4">
+        <div class="stat-card h-100 w-100">
           <div class="stat-title">현재 총 투자 원금</div>
           <div class="stat-value" style="color:var(--accent-color);">${formatKRW(totalInv)}</div>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="stat-card h-100">
+      <div class="col-4">
+        <div class="stat-card h-100 w-100">
           <div class="stat-title">보유 채권 상품 수</div>
           <div class="stat-value">${activeBonds.length} 개</div>
         </div>
       </div>
-      <div class="col-md-4">
-        <div class="stat-card h-100">
+      <div class="col-4">
+        <div class="stat-card h-100 w-100">
           <div class="stat-title">${currentYear}년 상환 예정 금액</div>
           <div class="stat-value">${formatKRW(scheduledAmount)}</div>
           <div class="small text-secondary mt-1" style="font-size: 0.85rem;">총 ${scheduledCount}건</div>
