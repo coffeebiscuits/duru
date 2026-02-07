@@ -137,9 +137,7 @@ function bindAllEvents() {
       const reader = new FileReader();
       reader.onload = () => {
         db = new SQL.Database(new Uint8Array(reader.result));
-        
-        // Input으로 열면 브라우저가 핸들을 안 줌. 일단 null.
-        // 하지만 저장 버튼 누르면 핸들을 딸 것임.
+        migrateSchema();
         fileHandle = null; 
         
         document.getElementById('db-filename').innerText = file.name;
