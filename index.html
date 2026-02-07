@@ -8,7 +8,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Spoqa+Han+Sans+Neo:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="stylesheet" href="./css/style.css">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
+
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -17,21 +20,61 @@
       <button class="hamburger" id="hamBtn"><span></span><span></span><span></span></button>
       <span class="profile-name">🌿 채권관리</span>
     </div>
-    <div id="clock" class="clock-text">00:00:00</div>
+    <div class="d-flex align-items-center gap-3">
+      <button onclick="saveDbToFile()" class="btn btn-sm btn-outline-success fw-bold" style="border-radius: 20px;">💾 DB 저장</button>
+      <div id="clock" class="clock-text">00:00:00</div>
+    </div>
   </header>
 
   <div class="container-flex">
     <nav class="sidebar" id="sidebar">
       <ul class="sidebar-menu" id="nav-menu">
-        <li><a data-tab="dashboard" class="active">대시보드</a></li>
-        <li><a data-tab="list">자산 관리</a></li>
-        <li><a data-tab="interest">이자 수취</a></li>
-        <li><a data-tab="analytics">수익 통계</a></li>
+        <li><a data-tab="dashboard" class="active">📊 대시보드</a></li>
+        <li><a data-tab="list">📦 자산 관리</a></li>
+        <li><a data-tab="interest">💳 이자 수취</a></li>
+        <li><a data-tab="analytics">📈 수익 통계</a></li>
       </ul>
     </nav>
 
     <main class="main" id="render-area">
       </main>
+  </div>
+
+  <div class="modal fade" id="entryModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content text-center p-4" style="background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);">
+        <div class="modal-body">
+          <h2 class="mb-3" style="font-weight: 800; color: var(--text-main);">🌿 채권 관리 시작하기</h2>
+          <p class="text-secondary mb-5">
+            서버 없는 안전한 로컬 자산 관리.<br>
+            <b>.db 파일</b>은 오직 당신의 기기에만 저장됩니다.
+          </p>
+          
+          <div class="row g-4 justify-content-center">
+            <div class="col-md-5">
+              <div class="card h-100 border-0 shadow-sm p-3 stat-card" onclick="initNewDb()" style="cursor: pointer;">
+                <div class="card-body">
+                  <div style="font-size: 3rem; margin-bottom: 10px;">🆕</div>
+                  <h4 style="font-weight: 700; color: var(--accent-color);">새로 시작하기</h4>
+                  <p class="small text-secondary m-0">새로운 DB를 생성하고<br>관리 화면으로 진입합니다.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-5">
+              <div class="card h-100 border-0 shadow-sm p-3 stat-card" onclick="document.getElementById('dbInput').click()" style="cursor: pointer;">
+                <div class="card-body">
+                  <div style="font-size: 3rem; margin-bottom: 10px;">📂</div>
+                  <h4 style="font-weight: 700; color: #1e3a8a;">DB 파일 불러오기</h4>
+                  <p class="small text-secondary m-0">기존에 저장한 <b>.db 파일</b>을<br>업로드하여 이어합니다.</p>
+                </div>
+              </div>
+              <input type="file" id="dbInput" accept=".db,.sqlite" style="display: none;" onchange="loadDbFromFile(this)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="modal fade" id="addBondModal" tabindex="-1" aria-hidden="true">
@@ -81,6 +124,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="./js/script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
