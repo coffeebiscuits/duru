@@ -171,30 +171,31 @@ function bindAllEvents() {
        if(sb) sb.style.display = sb.style.display === 'block' ? 'none' : 'block';
     };
   }
-
+  
   // (6) 폼 처리
   const addForm = document.getElementById('add-bond-form');
   if(addForm) {
     addForm.onsubmit = (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      runQuery(`INSERT INTO bonds (name, account, buyDate, maturityDate, rate, buyAmount, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
-        [fd.get('name'), fd.get('account'), fd.get('buyDate'), fd.get('maturityDate'), fd.get('rate'), Number(fd.get('buyAmount')), Number(fd.get('quantity'))]);
+      runQuery(`INSERT INTO bonds (name, type, account, buyDate, maturityDate, rate, buyAmount, quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [fd.get('name'), fd.get('type'), fd.get('account'), fd.get('buyDate'), fd.get('maturityDate'), fd.get('rate'), Number(fd.get('buyAmount')), Number(fd.get('quantity'))]);
       closeModal('addBondModal');
       e.target.reset();
       render();
     };
   }
-
+  
   const editForm = document.getElementById('edit-bond-form');
   if(editForm) {
     editForm.onsubmit = (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
-      runQuery(`UPDATE bonds SET name=?, account=?, rate=?, buyDate=?, maturityDate=?, quantity=?, buyAmount=? WHERE id=?`, 
-        [fd.get('name'), fd.get('account'), fd.get('rate'), fd.get('buyDate'), fd.get('maturityDate'), Number(fd.get('quantity')), Number(fd.get('buyAmount')), fd.get('id')]);
+      runQuery(`UPDATE bonds SET name=?, type=?, account=?, rate=?, buyDate=?, maturityDate=?, quantity=?, buyAmount=? WHERE id=?`, 
+        [fd.get('name'), fd.get('type'), fd.get('account'), fd.get('rate'), fd.get('buyDate'), fd.get('maturityDate'), Number(fd.get('quantity')), Number(fd.get('buyAmount')), fd.get('id')]);
       closeModal('editBondModal');
       render();
+      closeModal('detailBondModal'); // 수정 완료 시 상세창도 닫음 (선택사항)
     };
   }
 }
@@ -282,7 +283,7 @@ function createTables() {
   if (!db) return;
   db.run(`CREATE TABLE IF NOT EXISTS bonds (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT, account TEXT, buyDate TEXT, maturityDate TEXT,
+    name TEXT, type TEXT, account TEXT, buyDate TEXT, maturityDate TEXT,
     rate REAL, buyAmount INTEGER, quantity INTEGER DEFAULT 0, 
     status TEXT DEFAULT 'active', redemptionAmount INTEGER DEFAULT 0
   );`);
@@ -436,72 +437,27 @@ function renderList(container, bonds) {
 
     <div class="content-box mt-0">
       <div class="table-responsive">
-        <table class="table table-hover">
+        <table class="table table-hover align-middle">
           <thead>
             <tr>
-              <th>채권명</th>
-              <th>계좌</th>
-              <th>매수일</th>
-              <th>만기일</th>
-              <th>이율</th>
-              <th>수량</th>
-              <th>매수금액</th>
-              <th>상태/전체손익</th>
-              <th>관리</th>
+              <th style="width: 25%;">채권명</th>
+              <th style="width: 15%;">종류</th>
+              <th style="width: 20%;">계좌</th>
+              <th style="width: 20%;">매수일</th>
+              <th style="width: 20%;">만기일</th>
             </tr>
           </thead>
           <tbody>
-          ${filteredBonds.length === 0 ? `<tr><td colspan="9" class="text-center py-5 text-muted">${listFilter === 'all' ? '데이터가 없습니다.' : '해당 조건의 채권이 없습니다.'}</td></tr>` : 
+          ${filteredBonds.length === 0 ? `<tr><td colspan="5" class="text-center py-5 text-muted">${listFilter === 'all' ? '데이터가 없습니다.' : '해당 조건의 채권이 없습니다.'}</td></tr>` : 
             filteredBonds.slice().reverse().map(b => {
-              // 1. 누적 이자 계산
-              let totalInterest = 0;
-              if (b.interests) {
-                Object.values(b.interests).forEach(yearData => {
-                  Object.values(yearData).forEach(amount => {
-                    totalInterest += (Number(amount) || 0);
-                  });
-                });
-              }
-
-              // 2. 자본 차익 계산 (상환 완료 시에만 발생)
-              let capitalGain = 0;
-              if (b.status === 'completed') {
-                capitalGain = (b.redemptionAmount || b.buyAmount) - b.buyAmount;
-              }
-
-              // 3. 전체 손익 계산
-              const netProfit = totalInterest + capitalGain;
-
-              // 4. UI 뱃지 및 텍스트 설정
-              let statusBadge = b.status === 'completed' 
-                ? `<span class="badge-soft status-done">완료</span>` 
-                : `<span class="badge-soft status-wait">보유중</span>`;
-
-              const profitClass = netProfit > 0 ? 'profit-plus' : (netProfit < 0 ? 'profit-minus' : 'text-secondary');
-              const sign = netProfit > 0 ? '+' : '';
-
-              const profitText = `
-                <div class="${profitClass} fw-bold mt-1">${sign}${formatKRW(netProfit)}</div>
-                <div class="text-muted" style="font-size: 0.7rem;">
-                  (차익: ${formatKRW(capitalGain)}, 이자: ${formatKRW(totalInterest)})
-                </div>
-              `;
-              
-              return `<tr>
-                  <td class="fw-bold text-dark" style="cursor:pointer;" onclick="openEditModal(${b.id})">${b.name}</td>
+              return `<tr onclick="openDetailModal(${b.id})" style="cursor:pointer;">
+                  <td class="fw-bold text-dark">
+                    <div class="text-truncate" style="max-width: 200px;" title="${b.name}">${b.name}</div>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">${b.type || '-'}</span></td>
                   <td class="text-secondary small">${b.account}</td>
                   <td class="text-secondary small">${b.buyDate}</td>
                   <td class="text-secondary small">${b.maturityDate}</td>
-                  <td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td>
-                  <td class="text-dark">${b.quantity ? Number(b.quantity).toLocaleString() : 0}</td>
-                  <td class="fw-bold text-dark">${formatKRW(b.buyAmount)}</td>
-                  <td>${statusBadge}${profitText}</td>
-                  <td>
-                      ${b.status === 'active' 
-                        ? `<button onclick="toggleStatus(${b.id}, '${b.name}', ${b.buyAmount})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1" title="만기 처리">✔️</button>` 
-                        : `<button onclick="revertStatus(${b.id}, '${b.name}')" class="btn btn-sm btn-outline-warning border-0 rounded-circle ms-1" title="상태 되돌리기">🔄</button>`
-                      }
-                  </td>
               </tr>`;
             }).join('')}
           </tbody>
@@ -510,7 +466,6 @@ function renderList(container, bonds) {
     </div>
   `;
 }
-
 
 // ====== 연도 범위를 동적으로 가져오는 헬퍼 함수 ======
 function getAvailableYears(bonds) {
@@ -637,7 +592,7 @@ window.updateInterest = (id, y, m, v) => {
 
 window.changeYear = (v) => { selectedYear = v; render(); };
 
-// 모달 바인딩
+// 편집 모달 바인딩
 window.openEditModal = (id) => {
   if (!db) return;
   const stmt = db.prepare("SELECT * FROM bonds WHERE id = :id");
@@ -654,6 +609,7 @@ window.openEditModal = (id) => {
       form.querySelector('[name=maturityDate]').value = bond.maturityDate;
       form.querySelector('[name=quantity]').value = bond.quantity || 0;
       form.querySelector('[name=buyAmount]').value = bond.buyAmount;
+      form.querySelector('[name=type]').value = bond.type || '';
     }
 
     const delBtn = document.getElementById('btn-delete-on-modal');
@@ -672,6 +628,89 @@ window.openEditModal = (id) => {
     if(editModal && typeof bootstrap !== 'undefined') new bootstrap.Modal(editModal).show();
   }
   stmt.free();
+};
+
+// 상세 모달 바인딩
+window.openDetailModal = (id) => {
+  if (!db) return;
+  // 1. 데이터 가져오기 (bonds + interests)
+  const bonds = getBonds(); // 기존 getBonds() 활용 (이자 포함)
+  const bond = bonds.find(b => b.id === id);
+  if (!bond) return;
+
+  // 2. 손익 계산
+  let totalInterest = 0;
+  if (bond.interests) {
+    Object.values(bond.interests).forEach(y => Object.values(y).forEach(v => totalInterest += (Number(v)||0)));
+  }
+  let capitalGain = 0;
+  if (bond.status === 'completed') {
+    capitalGain = (bond.redemptionAmount || bond.buyAmount) - bond.buyAmount;
+  }
+  const netProfit = totalInterest + capitalGain;
+
+  // 3. UI 매핑
+  document.getElementById('detail-bond-name').innerText = bond.name;
+  document.getElementById('detail-bond-info').innerText = `${bond.type || '미분류'} | ${bond.account}`;
+  document.getElementById('detail-invest').innerText = formatKRW(bond.buyAmount);
+  document.getElementById('detail-rate').innerText = bond.rate + '%';
+  document.getElementById('detail-qty').innerText = bond.quantity ? Number(bond.quantity).toLocaleString() : 0;
+  document.getElementById('detail-maturity').innerText = bond.maturityDate;
+
+  // 상태 뱃지
+  const statusEl = document.getElementById('detail-status-badge');
+  if (bond.status === 'active') {
+    statusEl.innerHTML = `<span class="badge-soft status-wait">보유중</span>`;
+  } else {
+    statusEl.innerHTML = `<span class="badge-soft status-done">완료</span>`;
+  }
+
+  // 손익 표시
+  const profitEl = document.getElementById('detail-profit');
+  profitEl.innerText = (netProfit > 0 ? '+' : '') + formatKRW(netProfit);
+  profitEl.className = `fw-bold fs-5 ${netProfit > 0 ? 'profit-plus' : (netProfit < 0 ? 'profit-minus' : 'text-dark')}`;
+  
+  document.getElementById('detail-profit-sub').innerText = `(차익: ${formatKRW(capitalGain)} / 이자: ${formatKRW(totalInterest)})`;
+
+  // 4. 버튼 이벤트 연결
+  // (1) 상태 변경 버튼
+  const btnToggle = document.getElementById('btn-toggle-status');
+  if (bond.status === 'active') {
+    btnToggle.innerText = "만기 처리 (상환)";
+    btnToggle.className = "btn btn-outline-success py-2 fw-bold";
+    btnToggle.onclick = () => {
+      toggleStatus(bond.id, bond.name, bond.buyAmount); // 기존 함수 활용
+      // toggleStatus 내부에서 render() 되지만 모달 닫기도 필요하면 추가 처리
+      setTimeout(() => closeModal('detailBondModal'), 100); 
+    };
+  } else {
+    btnToggle.innerText = "상태 되돌리기 (보유중으로)";
+    btnToggle.className = "btn btn-outline-warning py-2 fw-bold";
+    btnToggle.onclick = () => {
+      revertStatus(bond.id, bond.name);
+      setTimeout(() => closeModal('detailBondModal'), 100);
+    };
+  }
+
+  // (2) 수정 버튼 -> 수정 모달 열기
+  document.getElementById('btn-edit-open').onclick = () => {
+    closeModal('detailBondModal'); // 상세창 닫고
+    openEditModal(bond.id);        // 수정창 열기 (기존 함수 - type 필드 매핑 확인 필요)
+  };
+
+  // (3) 삭제 버튼
+  document.getElementById('btn-delete-bond').onclick = () => {
+    if (confirm(`'${bond.name}' 채권을 정말 삭제하시겠습니까?`)) {
+      runQuery("DELETE FROM bonds WHERE id = ?", [bond.id]);
+      runQuery("DELETE FROM interests WHERE bond_id = ?", [bond.id]);
+      closeModal('detailBondModal');
+      render();
+    }
+  };
+
+  // 5. 모달 띄우기
+  const el = document.getElementById('detailBondModal');
+  if (el && typeof bootstrap !== 'undefined') new bootstrap.Modal(el).show();
 };
 
 
