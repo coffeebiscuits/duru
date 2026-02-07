@@ -11,14 +11,14 @@
   <style>
     /* ====== 프로핏 그린 테마 (Profit Green) ====== */
     :root {
-      --bg-color: #f0fdf4; /* 아주 연한 민트 배경 */
+      --bg-color: #f0fdf4;
       --sidebar-bg: #ffffff;
       --card-bg: #ffffff;
-      --border-color: #dcfce7; /* 연한 그린 보더 */
-      --accent-color: #059669; /* 에메랄드 그린 (메인) */
-      --accent-hover: #047857; /* 다크 그린 (호버) */
-      --text-main: #1e293b; /* 짙은 네이비 (가독성) */
-      --text-sub: #64748b; /* 회색 (부수적 텍스트) */
+      --border-color: #dcfce7;
+      --accent-color: #059669;
+      --accent-hover: #047857;
+      --text-main: #1e293b;
+      --text-sub: #64748b;
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
       --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05);
     }
@@ -59,7 +59,7 @@
       color: var(--text-sub); text-decoration: none; font-weight: 500; transition: 0.2s; cursor: pointer;
     }
     .sidebar-menu a:hover, .sidebar-menu a.active {
-      background: #ecfdf5; color: var(--accent-color); font-weight: 700; /* 민트색 배경 강조 */
+      background: #ecfdf5; color: var(--accent-color); font-weight: 700;
     }
 
     /* ====== 메인 콘텐츠 ====== */
@@ -84,8 +84,10 @@
 
     /* 배지 및 버튼 */
     .badge-soft { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
-    .status-wait { background: #dcfce7; color: #15803d; } /* 연한 그린 배경 + 진한 그린 텍스트 */
+    .status-wait { background: #dcfce7; color: #15803d; }
     .status-done { background: #f1f5f9; color: #64748b; }
+    .profit-plus { color: #dc2626; font-weight: 700; font-size: 0.85rem; } /* 수익(+) 빨강 */
+    .profit-minus { color: #2563eb; font-weight: 700; font-size: 0.85rem; } /* 손실(-) 파랑 */
     
     .btn-primary-custom { background: var(--accent-color); color: #fff; font-weight: 700; border: none; transition: background 0.2s; }
     .btn-primary-custom:hover { background: var(--accent-hover); color: #fff; }
@@ -192,13 +194,13 @@
     });
 
     // ====== 데이터 및 상태 ======
-    let bonds = JSON.parse(localStorage.getItem('bond_manager_v5_data')) || [];
+    let bonds = JSON.parse(localStorage.getItem('bond_manager_v6_data')) || [];
     let activeTab = 'dashboard';
     let selectedYear = new Date().getFullYear();
     let currentChart = null;
 
     const formatKRW = (v) => new Intl.NumberFormat('ko-KR').format(v) + '원';
-    const saveData = () => localStorage.setItem('bond_manager_v5_data', JSON.stringify(bonds));
+    const saveData = () => localStorage.setItem('bond_manager_v6_data', JSON.stringify(bonds));
 
     // ====== 렌더링 함수 ======
     function render() {
@@ -297,22 +299,39 @@
         <div class="content-box mt-0">
           <div class="table-responsive">
             <table class="table table-hover">
-              <thead><tr><th>채권명</th><th>계좌</th><th>매수금액</th><th>이율</th><th>만기일</th><th>상태</th><th>관리</th></tr></thead>
+              <thead><tr><th>채권명</th><th>계좌</th><th>매수금액</th><th>이율</th><th>만기일</th><th>상태/손익</th><th>관리</th></tr></thead>
               <tbody>
                 ${bonds.length === 0 ? '<tr><td colspan="7" class="text-center py-5 text-muted fw-bold">데이터가 없습니다.</td></tr>' : 
-                  bonds.slice().reverse().map(b => `
-                  <tr>
-                    <td class="fw-bold">${b.name}</td>
-                    <td class="text-secondary small">${b.account}</td>
-                    <td class="fw-bold text-dark">${formatKRW(b.buyAmount)}</td>
-                    <td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td>
-                    <td class="text-secondary small">${b.maturityDate}</td>
-                    <td><span class="badge-soft ${b.status==='active'?'status-wait':'status-done'}">${b.status==='active'?'보유중':'완료'}</span></td>
-                    <td>
-                      <button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0 rounded-circle" title="삭제">🗑️</button>
-                      ${b.status==='active' ? `<button onclick="toggleStatus(${b.id})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1" title="상태변경">✔️</button>` : ''}
-                    </td>
-                  </tr>`).join('')}
+                  bonds.slice().reverse().map(b => {
+                    // 완료된 채권일 경우 손익 계산 표시
+                    let statusBadge = `<span class="badge-soft status-wait">보유중</span>`;
+                    let profitText = '';
+                    
+                    if(b.status === 'completed') {
+                      statusBadge = `<span class="badge-soft status-done">완료</span>`;
+                      const diff = (b.redemptionAmount || b.buyAmount) - b.buyAmount;
+                      if(diff > 0) profitText = `<div class="profit-plus mt-1">+${formatKRW(diff)}</div>`;
+                      else if(diff < 0) profitText = `<div class="profit-minus mt-1">${formatKRW(diff)}</div>`;
+                      else profitText = `<div class="text-secondary small mt-1">원금상환</div>`;
+                    }
+
+                    return `
+                    <tr>
+                      <td class="fw-bold">${b.name}</td>
+                      <td class="text-secondary small">${b.account}</td>
+                      <td class="fw-bold text-dark">${formatKRW(b.buyAmount)}</td>
+                      <td style="color:var(--accent-color); font-weight:800;">${b.rate}%</td>
+                      <td class="text-secondary small">${b.maturityDate}</td>
+                      <td>
+                        ${statusBadge}
+                        ${profitText}
+                      </td>
+                      <td>
+                        <button onclick="deleteBond(${b.id})" class="btn btn-sm btn-outline-danger border-0 rounded-circle" title="삭제">🗑️</button>
+                        ${b.status==='active' ? `<button onclick="toggleStatus(${b.id}, '${b.name}', ${b.buyAmount})" class="btn btn-sm btn-outline-success border-0 rounded-circle ms-1" title="상환(만기) 처리">✔️</button>` : ''}
+                      </td>
+                    </tr>`;
+                  }).join('')}
               </tbody>
             </table>
           </div>
@@ -361,8 +380,23 @@
 
     function renderAnalytics(container) {
       const totalLife = bonds.reduce((a, c) => a + Number(c.buyAmount), 0);
-      let totalProfit = 0;
-      bonds.forEach(b => Object.values(b.interests || {}).forEach(y => Object.values(y).forEach(v => totalProfit += (Number(v)||0))));
+      
+      // 누적 실현 손익 = (모든 이자 수익) + (완료된 채권의 자본 차익)
+      let totalInterest = 0;
+      let capitalGain = 0;
+
+      bonds.forEach(b => {
+        // 1. 이자 수익 합산
+        Object.values(b.interests || {}).forEach(y => Object.values(y).forEach(v => totalInterest += (Number(v)||0)));
+        
+        // 2. 만기 자본 차익 합산 (완료된 것만)
+        if(b.status === 'completed' && b.redemptionAmount !== undefined) {
+          capitalGain += (Number(b.redemptionAmount) - Number(b.buyAmount));
+        }
+      });
+      
+      const totalProfit = totalInterest + capitalGain;
+
       const monthlyData = Array(12).fill(0).map((_, i) => {
         let sum = 0;
         bonds.forEach(b => sum += (Number(b.interests?.[selectedYear]?.[i+1]) || 0));
@@ -380,13 +414,16 @@
           </div>
           <div class="col-md-6">
             <div class="stat-card">
-              <div class="stat-title">누적 이자 수익</div>
-              <div class="stat-value" style="color:var(--accent-color);">+${formatKRW(totalProfit)}</div>
+              <div class="stat-title">누적 실현 손익 (이자+매매차익)</div>
+              <div class="stat-value" style="color:var(--accent-color);">
+                ${totalProfit > 0 ? '+' : ''}${formatKRW(totalProfit)}
+              </div>
+              <div class="small text-secondary mt-1">이자수익: ${formatKRW(totalInterest)} / 차익: ${formatKRW(capitalGain)}</div>
             </div>
           </div>
         </div>
         <div class="content-box">
-          <h5 style="color:var(--text-main); font-weight:700;">${selectedYear}년 월별 수익 추이</h5>
+          <h5 style="color:var(--text-main); font-weight:700;">${selectedYear}년 월별 이자 수익 추이</h5>
           <canvas id="anaChart" height="100"></canvas>
         </div>
       `;
@@ -434,10 +471,18 @@
       render();
     };
 
-    window.toggleStatus = (id) => {
-      bonds = bonds.map(b => b.id === id ? {...b, status: 'completed'} : b);
-      saveData(); render();
+    // 만기 상환 처리 (금액 입력 받기)
+    window.toggleStatus = (id, name, buyAmt) => {
+      const inputVal = prompt(`'${name}' 채권의 만기(상환) 금액을 입력하세요.\n(입력하지 않으면 매수금액(${formatKRW(buyAmt)})과 동일하게 처리됩니다.)`, buyAmt);
+      
+      if (inputVal !== null) { // 취소가 아닐 경우만 진행
+        const finalAmt = inputVal.trim() === '' ? buyAmt : Number(inputVal);
+        bonds = bonds.map(b => b.id === id ? { ...b, status: 'completed', redemptionAmount: finalAmt } : b);
+        saveData(); 
+        render();
+      }
     };
+
     window.deleteBond = (id) => {
       if(confirm('삭제하시겠습니까?')) { bonds = bonds.filter(b => b.id !== id); saveData(); render(); }
     };
