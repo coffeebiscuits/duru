@@ -350,30 +350,37 @@ function renderDashboard(container, bonds) {
   const scheduledAmount = scheduledBonds.reduce((a, c) => a + c.buyAmount, 0);
   const scheduledCount = scheduledBonds.length;
 
+  // 망가진 레이아웃을 정리하고 유령 코드(slice/map)를 완전히 제거함
   container.innerHTML = `
-    <div class="row g-4">
-      <div class="col-lg-4">
-        <div class="d-flex flex-column gap-3 h-100">
-          <div class="stat-card flex-grow-1 d-flex flex-column justify-content-center">
-            <div class="stat-title">현재 총 투자 원금</div>
-            <div class="stat-value" style="color:var(--accent-color);">${formatKRW(totalInv)}</div>
-          </div>
-          <div class="stat-card flex-grow-1 d-flex flex-column justify-content-center">
-            <div class="stat-title">보유 채권 상품 수</div>
-            <div class="stat-value">${activeBonds.length} 개</div>
-          </div>
-          <div class="stat-card flex-grow-1 d-flex flex-column justify-content-center">
-            <div class="stat-title">${currentYear}년 상환 예정 금액</div>
-            <div class="stat-value">${formatKRW(scheduledAmount)}</div>
-            <div class="small text-secondary mt-1" style="font-size: 0.85rem;">총 ${scheduledCount}건</div>
-          </div>
+    <h3 class="mb-4 fw-bold">안녕하세요 <span class="fs-6 fw-normal text-secondary">채권 투자 현황입니다.</span></h3>
+    
+    <div class="row g-4 mb-4">
+      <div class="col-md-4">
+        <div class="stat-card h-100">
+          <div class="stat-title">현재 총 투자 원금</div>
+          <div class="stat-value" style="color:var(--accent-color);">${formatKRW(totalInv)}</div>
         </div>
       </div>
-      
-      <div class="col-lg-8">
-        <div class="content-box h-100 d-flex flex-column">
+      <div class="col-md-4">
+        <div class="stat-card h-100">
+          <div class="stat-title">보유 채권 상품 수</div>
+          <div class="stat-value">${activeBonds.length} 개</div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stat-card h-100">
+          <div class="stat-title">${currentYear}년 상환 예정 금액</div>
+          <div class="stat-value">${formatKRW(scheduledAmount)}</div>
+          <div class="small text-secondary mt-1" style="font-size: 0.85rem;">총 ${scheduledCount}건</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-12">
+        <div class="content-box">
           <h5 class="fw-bold mb-4">자산 비중 (Top 5)</h5>
-          <div class="flex-grow-1 d-flex align-items-center">
+          <div style="height: 300px; position: relative;">
             <canvas id="dashChart"></canvas>
           </div>
         </div>
@@ -398,7 +405,7 @@ function renderDashboard(container, bonds) {
       }, 
       options: { 
         responsive: true,
-        maintainAspectRatio: false, // 컨테이너 높이에 맞게 차트 크기 조절
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } }, 
         scales: { 
           y: { beginAtZero: true, grid: { color: '#f1f5f9' } }, 
@@ -410,7 +417,6 @@ function renderDashboard(container, bonds) {
 }
 
 function renderList(container, bonds) {
-  // 1. 상태에 따른 필터링 로직 적용
   const filteredBonds = bonds.filter(b => {
     if (listFilter === 'all') return true;
     if (listFilter === 'active') return b.status === 'active';
