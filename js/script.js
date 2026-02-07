@@ -147,8 +147,10 @@ function createTables() {
   db.run(`CREATE TABLE IF NOT EXISTS bonds (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT, account TEXT, buyDate TEXT, maturityDate TEXT,
-    rate REAL, buyAmount INTEGER, status TEXT DEFAULT 'active', redemptionAmount INTEGER DEFAULT 0
+    rate REAL, buyAmount INTEGER, quantity INTEGER DEFAULT 0, 
+    status TEXT DEFAULT 'active', redemptionAmount INTEGER DEFAULT 0
   );`);
+  
   db.run(`CREATE TABLE IF NOT EXISTS interests (
     bond_id INTEGER, year INTEGER, month INTEGER, amount INTEGER,
     PRIMARY KEY (bond_id, year, month)
@@ -288,8 +290,17 @@ document.getElementById('hamBtn').addEventListener('click', () => {
 document.getElementById('add-bond-form').onsubmit = (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
-  runQuery(`INSERT INTO bonds (name, account, buyDate, maturityDate, rate, buyAmount) VALUES (?, ?, ?, ?, ?, ?)`, 
-    [fd.get('name'), fd.get('account'), fd.get('buyDate'), fd.get('maturityDate'), fd.get('rate'), Number(fd.get('buyAmount'))]);
+  
+  runQuery(`INSERT INTO bonds (name, account, buyDate, maturityDate, rate, buyAmount, quantity) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+    [
+      fd.get('name'), 
+      fd.get('account'), 
+      fd.get('buyDate'), 
+      fd.get('maturityDate'), 
+      fd.get('rate'), 
+      Number(fd.get('buyAmount')),
+      Number(fd.get('quantity'))
+    ]);
   
   bootstrap.Modal.getInstance(document.getElementById('addBondModal')).hide();
   e.target.reset();
